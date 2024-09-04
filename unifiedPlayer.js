@@ -64,7 +64,8 @@ export class UnifiedPlayer extends EventTarget {
     });
   }
   get paused() {
-    return !this.isInRemotePlayback || this.videoElement.paused;
+    // Currently we don't support pause in remote playback, so if we are in remote playback we are not paused.
+    return this.isInRemotePlayback ? false : this.videoElement.paused;
   }
 
   get currentTime() {
@@ -75,7 +76,7 @@ export class UnifiedPlayer extends EventTarget {
     if (this.isInRemotePlayback) {
       console.warn("Setting currentTime while in remote playback is not supported yet.");
     } else {
-      remotePlayer.currentTime = this._localPlayerMedia().currentTime = time;
+      remotePlayer.currentTime = this.videoElement.currentTime = time;
     }
   }
 

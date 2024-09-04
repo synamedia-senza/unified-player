@@ -1,0 +1,16 @@
+{
+  "name": "unified-player",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^5.72.1",
+    "webpack-cli": "^4.9.2"
+  },
+  "dependencies": {
+    "senza-sdk": "^3.21.0",
+    "shaka-player": "^3.2.9"
+  }
+}

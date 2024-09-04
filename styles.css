@@ -1,0 +1,30 @@
+body {
+  width: 1920px;
+  height: 1080px;
+	margin: 0px;
+	background-color: black;
+  overflow: hidden;
+}
+  
+#main {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+	background-color: white;
+  text-align: center;
+}
+
+#banner {
+  position: absolute;
+  width: 1920px;
+  height: 200px;
+	top: 780px;
+  left: 0px;
+  color: white;
+  padding-top: 20px;
+	font: 56pt Helvetica; 
+	font-weight: bold;
+  font-style: italic;
+  background-color: #40C4FF;
+  z-index: 2;
+}

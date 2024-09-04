@@ -4,7 +4,8 @@ import shaka from "shaka-player";
 export class UnifiedPlayer extends EventTarget {
   constructor(videoElement) {
     super();
-    this.localPlayer = new shaka.Player(videoElement);
+    this.videoElement = videoElement;
+    this.localPlayer = new shaka.Player(this.videoElement);
     this.remotePlayer = remotePlayer;
     this.isInRemotePlayback = false;
 
@@ -24,7 +25,7 @@ export class UnifiedPlayer extends EventTarget {
         return;
       }
       console.log("remotePlayer timeupdate");
-      this._localPlayerMedia().currentTime = this.remotePlayer.currentTime;
+      this.videoElement.currentTime = this.remotePlayer.currentTime;
       this.dispatchEvent(new Event("timeupdate"));
     });
 
@@ -38,12 +39,12 @@ export class UnifiedPlayer extends EventTarget {
       this.dispatchEvent(new CustomEvent("error", event));
     });
 
-    videoElement.addEventListener("timeupdate", () => {
+    this.videoElement.addEventListener("timeupdate", () => {
       if (this.isInRemotePlayback) {
         return;
       }
       console.log("localPlayer timeupdate");
-      this.remotePlayer.currentTime = this._localPlayerMedia().currentTime;
+      this.remotePlayer.currentTime = this.videoElement.currentTime;
       this.dispatchEvent(new Event("timeupdate"));
     });
 
@@ -63,11 +64,11 @@ export class UnifiedPlayer extends EventTarget {
     });
   }
   get paused() {
-    return !this.isInRemotePlayback || this._localPlayerMedia().paused;
+    return !this.isInRemotePlayback || this.videoElement.paused;
   }
 
   get currentTime() {
-    return this.isInRemotePlayback ? remotePlayer.currentTime : this._localPlayerMedia().currentTime;
+    return this.isInRemotePlayback ? remotePlayer.currentTime : this.videoElement.currentTime;
   }
 
   set currentTime(time) {
@@ -114,16 +115,12 @@ export class UnifiedPlayer extends EventTarget {
     return this.localPlayer.load(url);
   }
 
-  _localPlayerMedia() {
-    return this.localPlayer.getMediaElement();
-  }
-
   _localPlayerPlay() {
-    return this._localPlayerMedia().play();
+    return this.videoElement.play();
   }
 
   _localPlayerPause() {
-    this._localPlayerMedia().pause();
+    this.videoElement.pause();
   }
 
   _remotePlayerLoad(url) {

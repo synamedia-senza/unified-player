@@ -1,7 +1,51 @@
 import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
 
+/**
+ * UnifiedPlayer class that handles both local and remote playback.
+ * 
+ * @class UnifiedPlayer
+ * @property {boolean} isInRemotePlayback - Indicates whether the player is in remote playback.
+ * @property {number} currentTime - Gets or sets the current playback time.
+ * @property {number} duration - Gets the duration of the media.
+ * @property {boolean} paused - Indicates whether the player is paused.
+ * @fires UnifiedPlayer#ended - Indicates that the media has ended.
+ * @fires UnifiedPlayer#error - Indicates that an error occurred.
+ * @fires UnifiedPlayer#timeupdate - Indicates that the current playback time has changed.
+ * 
+ * @example
+ * import { UnifiedPlayer } from "./unifiedPlayer.js";
+ * 
+ * try {
+ *   const videoElement = document.getElementById("video");
+ *   const unifiedPlayer = new UnifiedPlayer(videoElement);
+ *   await unifiedPlayer.load("http://playable.url/file.mpd");
+ *   await unifiedPlayer.play(); // Will start the playback on the local player
+ *   document.addEventListener("keydown", async function (event) {
+ *     switch (event.key) {
+ *       case "ArrowLeft": {
+ *         await unifiedPlayer.moveToLocalPlayback(); // Will move the playback to the local player
+ *         break;
+ *       }
+ *       case "ArrowRight": {
+ *         unifiedPlayer.moveToRemotePlayback(); // Will move the playback to the remote player
+ *         break;
+ *       }
+ *       default: return;
+ *     }
+ *     event.preventDefault();
+ *   });
+ * 
+ * } catch (err) {
+ *   console.error("UnifiedPlayer failed with error", err);
+ * }
+ */
 export class UnifiedPlayer extends EventTarget {
+  /**
+   * Creates an instance of UnifiedPlayer.
+   * 
+   * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
+   */
   constructor(videoElement) {
     super();
     this.videoElement = videoElement;
@@ -63,15 +107,31 @@ export class UnifiedPlayer extends EventTarget {
       }
     });
   }
+
+  /**
+   * Indicates whether the player is paused.
+   * 
+   * @readonly
+   * @type {boolean}
+   */
   get paused() {
-    // Currently we don't support pause in remote playback, so if we are in remote playback we are not paused.
     return this.isInRemotePlayback ? false : this.videoElement.paused;
   }
 
+  /**
+   * Gets the current playback time.
+   * 
+   * @type {number}
+   */
   get currentTime() {
     return this.isInRemotePlayback ? remotePlayer.currentTime : this.videoElement.currentTime;
   }
 
+  /**
+   * Sets the current playback time.
+   * NOTE: When in remote playback, this will not affect the remote player.
+   * @param {number} time - The time to set the current playback to.
+   */
   set currentTime(time) {
     if (this.isInRemotePlayback) {
       console.warn("Setting currentTime while in remote playback is not supported yet.");
@@ -80,6 +140,22 @@ export class UnifiedPlayer extends EventTarget {
     }
   }
 
+  /**
+   * Gets the duration of the media.
+   * 
+   * @readonly
+   * @type {number}
+   */
+  get duration() {
+    return this.videoElement.duration;
+  }
+
+  /**
+   * Loads a media URL into both local and remote players.
+   * 
+   * @param {string} url - The URL of the media to load.
+   * @returns {Promise<void>}
+   */
   async load(url) {
     try {
       await this._localPlayerLoad(url);
@@ -89,11 +165,21 @@ export class UnifiedPlayer extends EventTarget {
     }
   }
 
+  /**
+   * Plays the media.
+   * Will start the playback on the local player, to move the playback to the remote player call {@link moveToRemotePlayback}.
+   * 
+   * @returns {Promise<void>}
+   */
   async play() {
     await this._localPlayerPlay();
     this._remotePlayerPlay();
   }
 
+  /**
+   * Pauses the media on both local and remote players.
+   * NOTE: When in remote playback, this will not have any affect.
+   */
   pause() {
     if (this.isInRemotePlayback) {
       console.warn("Pausing while in remote playback is not supported yet.");
@@ -103,35 +189,78 @@ export class UnifiedPlayer extends EventTarget {
     }
   }
 
+  /**
+   * Moves playback to local player.
+   * 
+   * @returns {Promise<void>}
+   */
   async moveToLocalPlayback() {
     this._localPlayerPlay();
     lifecycle.moveToForeground();
   }
 
+  /**
+   * Moves playback to remote player.
+   */
   moveToRemotePlayback() {
     lifecycle.moveToBackground();
   }
 
+  /**
+   * Loads a media URL into the local player.
+   * 
+   * @private
+   * @param {string} url - The URL of the media to load.
+   * @returns {Promise<void>}
+   */
   _localPlayerLoad(url) {
     return this.localPlayer.load(url);
   }
 
+  /**
+   * Plays the media on the local player.
+   * 
+   * @private
+   * @returns {Promise<void>}
+   */
   _localPlayerPlay() {
     return this.videoElement.play();
   }
 
+  /**
+   * Pauses the media on the local player.
+   * 
+   * @private
+   */
   _localPlayerPause() {
     this.videoElement.pause();
   }
 
+  /**
+   * Loads a media URL into the remote player.
+   * 
+   * @private
+   * @param {string} url - The URL of the media to load.
+   * @returns {Promise<void>}
+   */
   _remotePlayerLoad(url) {
     return remotePlayer.load(url);
   }
 
+  /**
+   * Plays the media on the remote player.
+   * 
+   * @private
+   */
   _remotePlayerPlay() {
     remotePlayer.play(false);
   }
 
+  /**
+   * Pauses the media on the remote player.
+   * 
+   * @private
+   */
   _remotePlayerPause() {
     remotePlayer.pause();
   }

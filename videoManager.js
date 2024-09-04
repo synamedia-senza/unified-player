@@ -16,7 +16,7 @@ class VideoManager {
 
   play() {
     this.player.play().catch(error => {
-      console.log("Unable to play video. Possibly the browser will not autoplay video with sound.");
+      console.error("Unable to play video. Possibly the browser will not autoplay video with sound. Error:", error);
     });
   }
 

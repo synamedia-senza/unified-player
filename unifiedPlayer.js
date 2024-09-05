@@ -331,13 +331,7 @@ async function getLicenseFromServer(drmServer, licenseRequest, drmRequestFilter,
     drmRequestFilter(request);
   }
 
-  let response = await fetch(request.uris[0], {
-    "method": "POST",
-    "body": licenseRequest,
-    "headers": {
-      "Content-Type": "application/octet-stream"
-    }
-  });
+  let response = await fetch(request.uris[0], request);
 
   response = {
     data: await response.arrayBuffer(),

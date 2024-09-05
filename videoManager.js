@@ -2,8 +2,14 @@ import { UnifiedPlayer } from "./unifiedPlayer.js";
 
 class VideoManager {
 
-  init(videoElement) {
+  init(videoElement, drmServer) {
     this.player = new UnifiedPlayer(videoElement);
+    if (drmServer) {
+      // this will allow you to manipulate the request to the drm server including addind authorization headers and changing the body format
+      this.player.configureDrm(drmServer, (request) => {
+        request.headers["Authorization"] = "Bearer <...>"
+      });
+    }
   }
 
   async load(url) {

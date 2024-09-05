@@ -1,6 +1,5 @@
 import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
-
 /**
  * UnifiedPlayer class that handles both local and remote playback.
  * 
@@ -207,6 +206,57 @@ export class UnifiedPlayer extends EventTarget {
   }
 
   /**
+   * Configures DRM settings for the local player.
+   * 
+   * @param {string} server - The DRM server URL.
+   * @param {(request: { body : ArrayBuffer | ArrayBufferView | null , headers : { [ key: string ]: string } , uris : string [] }) => void} requestFilter - Optional request filter function.
+   * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string })} responseFilter - Optional response filter function.
+   */
+  configureDrm(server, requestFilter, responseFilter) {
+    this.localPlayer.configure({
+      drm: {
+        servers: {
+          'com.widevine.alpha': server,
+        }
+      }
+    });
+
+    const networkingEngine = this.localPlayer.getNetworkingEngine();
+
+    networkingEngine.registerRequestFilter((type, request) => {
+      if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
+        if (requestFilter) {
+          requestFilter(request);
+        }
+      }
+    });
+
+    networkingEngine.registerResponseFilter((type, response) => {
+      if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
+        if (responseFilter) {
+          responseFilter(response);
+        }
+      }
+    });
+
+    this.remotePlayer.addEventListener("license-request", async (event) => {
+      console.log("remotePlayer", "license-request", "Got license-request event from remote player");
+
+      // Extract license body from event
+      const requestBuffer = event?.detail?.licenseRequest;
+      const requestBufferStr = String.fromCharCode.apply(null, new Uint8Array(requestBuffer));
+      const decodedLicenseRequest = window.atob(requestBufferStr); // Decode from base64
+      const licenseRequestBytes = Uint8Array.from(decodedLicenseRequest, (l) => l.charCodeAt(0));
+
+      // Get license from server
+      const res = await getLicenseFromServer(server, licenseRequestBytes.buffer, requestFilter, responseFilter);
+
+      // Write response to remote player
+      console.log("remotePlayer", "license-request", "Writing response to remote player", res.code);
+      event.writeLicenseResponse(res.code, res.responseBody);
+    });
+  }
+  /**
    * Loads a media URL into the local player.
    * 
    * @private
@@ -265,3 +315,50 @@ export class UnifiedPlayer extends EventTarget {
     remotePlayer.pause();
   }
 }
+
+async function getLicenseFromServer(drmServer, licenseRequest, drmRequestFilter, drmResponseFilter) {
+  console.log("remotePlayer", "license-request", "Requesting license From Widevine server");
+  const request = {
+    "uris": [drmServer],
+    "method": "POST",
+    "body": licenseRequest,
+    "headers": {
+      "Content-Type": "application/octet-stream"
+    }
+  };
+
+  if (drmRequestFilter) {
+    drmRequestFilter(request);
+  }
+
+  let response = await fetch(request.uris[0], {
+    "method": "POST",
+    "body": licenseRequest,
+    "headers": {
+      "Content-Type": "application/octet-stream"
+    }
+  });
+
+  response = {
+    data: await response.arrayBuffer(),
+    headers: response.headers,
+    originalUri: response.url,
+    status: response.status,
+    timeMs: -1,
+    uri: response.url
+  };
+
+  if (drmResponseFilter) {
+    drmResponseFilter(response);
+  }
+
+  const code = response.status;
+  if (code !== 200) {
+    const responseBody = response.data ? String.fromCharCode(new Uint8Array(response.data)) : undefined;
+    console.error("remotePlayer", "license-request", "failed to to get response from widevine:", code, responseBody);
+    return { code, responseBody };
+  }
+
+  return { code, responseBody: response.data };
+}
+

@@ -1,13 +1,14 @@
 import { init, uiReady } from "senza-sdk";
 import { videoManager } from "./videoManager.js";
 
-const TEST_VIDEO = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
+const ENCRYPTED_TEST_VIDEO = "https://storage.googleapis.com/shaka-demo-assets/angel-one-widevine/dash.mpd";
+const WIDEVINE = "https://proxy.uat.widevine.com/proxy";
 
 window.addEventListener("load", async () => {
   try {
     await init();
-    videoManager.init(video);
-    await videoManager.load(TEST_VIDEO);
+    videoManager.init(video, WIDEVINE);
+    await videoManager.load(ENCRYPTED_TEST_VIDEO);
     videoManager.play();
     uiReady();
   } catch (error) {

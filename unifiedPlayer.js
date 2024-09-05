@@ -59,6 +59,12 @@ export class UnifiedPlayer extends EventTarget {
       this.dispatchEvent(new Event("ended"));
     });
 
+    if (this.remotePlayer.attach) {
+      this.remotePlayer.attach(this.videoElement);
+    } else {
+      this.remotePlayer.registerVideoElement(this.videoElement);
+    }
+
     this.remotePlayer.addEventListener("error", (event) => {
       console.log("remotePlayer error:", event.detail.errorCode, event.detail.message);
       this.dispatchEvent(new CustomEvent("error", event));
@@ -158,10 +164,10 @@ export class UnifiedPlayer extends EventTarget {
    */
   async load(url) {
     try {
-      await this._localPlayerLoad(url);
       await this._remotePlayerLoad(url);
+      await this._localPlayerLoad(url);
     } catch (error) {
-      console.log("Couldn't load.");
+      console.log("Couldn't load. Error:", error);
     }
   }
 

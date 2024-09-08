@@ -1,7 +1,7 @@
 import { init, uiReady } from "senza-sdk";
 import { videoManager } from "./videoManager.js";
 
-const TEST_VIDEO = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
+const TEST_VIDEO = "https://vod.infiniteplatform.tv/vod-clear/Sintel/default.mpd";
 
 window.addEventListener("load", async () => {
   try {

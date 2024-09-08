@@ -212,11 +212,17 @@ export class UnifiedPlayer extends EventTarget {
   }
 
   /**
-   * Configures DRM settings for the local player.
+   * Configures DRM settings.
    * 
    * @param {string} server - The DRM server URL.
-   * @param {(request: { body : ArrayBuffer | ArrayBufferView | null , headers : { [ key: string ]: string } , uris : string [] }) => void} requestFilter - Optional request filter function.
-   * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string })} responseFilter - Optional response filter function.
+   * @param {(request: { body : ArrayBuffer | ArrayBufferView | null , headers : { [ key: string ]: string } , uris : string [] }) => void | null} requestFilter - Optional request filter function, allows you to add auth tokens and/or reformat the body.
+   * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string }) => void | null} responseFilter - Optional response filter function.
+   * 
+   * @example
+   * unifiedPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
+   *  console.log("Requesting license from Widevine server");
+   *  request.headers["Authorization"] = "Bearer <...>";
+   * });
    */
   configureDrm(server, requestFilter, responseFilter) {
     this.localPlayer.configure({

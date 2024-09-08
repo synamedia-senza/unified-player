@@ -23,6 +23,7 @@ The `UnifiedPlayer` class is designed to handle both local and remote video play
 - **load(url: string): Promise<void>**: Loads a media URL into both local and remote players.
 - **play(): Promise<void>**: Plays the media. Starts playback on the local player.
 - **pause()**: Pauses the media on both local and remote players.
+- **configureDrm(server: string, requestFilter?: Function, responseFilter?: Function)**: Configures DRM settings for the player.
 - **moveToLocalPlayback(): Promise<void>**: Moves playback to the local player.
 - **moveToRemotePlayback()**: Moves playback to the remote player.
 
@@ -41,7 +42,7 @@ The `VideoManager` class acts as a higher-level controller that manages the `Uni
 
 ## Methods
 
-- **init(videoElement: HTMLVideoElement)**: Initializes the `UnifiedPlayer` with the provided video element.
+- **init(videoElement: HTMLVideoElement, drmServer?: String)**: Initializes the `UnifiedPlayer` with the provided video element and a drm server (optional).
 - **load(url: string): Promise<void>**: Loads a media URL into the player.
 - **play()**: Plays the media.
 - **pause()**: Pauses the media.

@@ -8,14 +8,15 @@ import shaka from "shaka-player";
  * @property {number} currentTime - Gets or sets the current playback time.
  * @property {number} duration - Gets the duration of the media.
  * @property {boolean} paused - Indicates whether the player is paused.
+ * @property {number} playbackRate - Gets or sets the playback rate. NOTE currently supported only on local player.
  * @fires UnifiedPlayer#ended - Indicates that the media has ended.
  * @fires UnifiedPlayer#error - Indicates that an error occurred.
  * @fires UnifiedPlayer#timeupdate - Indicates that the current playback time has changed.
- * @fires UnifiedPlayer#canplay - Indicates that the media is ready to play. NOTE currently NOT supported on remote playback.
- * @fires UnifiedPlayer#seeking - Indicates that the player is seeking. NOTE currently NOT supported on remote playback.
- * @fires UnifiedPlayer#seeked - Indicates that the player has finished seeking. NOTE currently NOT supported on remote playback.
- * @fires UnifiedPlayer#loadedmetadata - Indicates that the player has loaded metadata. NOTE currently NOT supported on remote playback.
- * @fires UnifiedPlayer#waiting - Indicates that the player is waiting for data. NOTE currently NOT supported on remote playback.
+ * @fires UnifiedPlayer#canplay - Indicates that the media is ready to play. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#seeking - Indicates that the player is seeking. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#seeked - Indicates that the player has finished seeking. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#loadedmetadata - Indicates that the player has loaded metadata. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#waiting - Indicates that the player is waiting for data. NOTE currently supported only via local player.
  * 
  * @example
  * import { UnifiedPlayer } from "./unifiedPlayer.js";

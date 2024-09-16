@@ -10,12 +10,18 @@ The `UnifiedPlayer` class is designed to handle both local and remote video play
 - **currentTime**: `number` - Gets or sets the current playback time.
 - **duration**: `number` - Gets the duration of the media.
 - **paused**: `boolean` - Indicates whether the player is paused.
+- **playbackRate**: `number` - Gets or sets the playback rate. **(currently only supported on local player)**
 
 ## Events
 
 - **ended**: Indicates that the media has ended.
 - **error**: Indicates that an error occurred.
 - **timeupdate**: Indicates that the current playback time has changed.
+- **canplay**: Indicates that the media is ready to play. **(currently only supported via local player)**
+- **seeking**: Indicates that the player is seeking. **(currently only supported via local player)**
+- **seeked**: Indicates that the player has finished seeking. **(currently only supported via local player)**
+- **loadedmetadata**: Indicates that the player has loaded metadata. **(currently only supported via local player)**
+- **waiting**: Indicates that the player is waiting for data. **(currently only supported via local player)**
 
 ## Methods
 

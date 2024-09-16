@@ -8,9 +8,15 @@ import shaka from "shaka-player";
  * @property {number} currentTime - Gets or sets the current playback time.
  * @property {number} duration - Gets the duration of the media.
  * @property {boolean} paused - Indicates whether the player is paused.
+ * @property {number} playbackRate - Gets or sets the playback rate. NOTE currently supported only on local player.
  * @fires UnifiedPlayer#ended - Indicates that the media has ended.
  * @fires UnifiedPlayer#error - Indicates that an error occurred.
  * @fires UnifiedPlayer#timeupdate - Indicates that the current playback time has changed.
+ * @fires UnifiedPlayer#canplay - Indicates that the media is ready to play. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#seeking - Indicates that the player is seeking. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#seeked - Indicates that the player has finished seeking. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#loadedmetadata - Indicates that the player has loaded metadata. NOTE currently supported only via local player.
+ * @fires UnifiedPlayer#waiting - Indicates that the player is waiting for data. NOTE currently supported only via local player.
  * 
  * @example
  * import { UnifiedPlayer } from "./unifiedPlayer.js";
@@ -52,17 +58,18 @@ export class UnifiedPlayer extends EventTarget {
     this.remotePlayer = remotePlayer;
     this.isInRemotePlayback = false;
 
-    this.remotePlayer.addEventListener("ended", () => {
-      console.log("remotePlayer ended");
-      lifecycle.moveToForeground();
-      this.dispatchEvent(new Event("ended"));
-    });
-
     if (this.remotePlayer.attach) {
       this.remotePlayer.attach(this.videoElement);
     } else {
       this.remotePlayer.registerVideoElement(this.videoElement);
     }
+
+    // Remote player events
+    this.remotePlayer.addEventListener("ended", () => {
+      console.log("remotePlayer ended");
+      lifecycle.moveToForeground();
+      this.dispatchEvent(new Event("ended"));
+    });
 
     this.remotePlayer.addEventListener("error", (event) => {
       console.log("remotePlayer error:", event.detail.errorCode, event.detail.message);
@@ -78,7 +85,9 @@ export class UnifiedPlayer extends EventTarget {
       this.dispatchEvent(new Event("timeupdate"));
     });
 
-    this.localPlayer.addEventListener("ended", () => {
+
+    // Local player events
+    this.videoElement.addEventListener("ended", () => {
       console.log("localPlayer ended");
       this.dispatchEvent(new Event("ended"));
     });
@@ -97,6 +106,33 @@ export class UnifiedPlayer extends EventTarget {
       this.dispatchEvent(new Event("timeupdate"));
     });
 
+    this.videoElement.addEventListener("canplay", () => {
+      console.log("localPlayer canplay");
+      this.dispatchEvent(new Event("canplay"));
+    });
+
+    this.videoElement.addEventListener("waiting", () => {
+      console.log("localPlayer waiting");
+      this.dispatchEvent(new Event("waiting"));
+    });
+
+    this.videoElement.addEventListener("seeking", () => {
+      console.log("localPlayer seeking");
+      this.dispatchEvent(new Event("seeking"));
+    });
+
+    this.videoElement.addEventListener("seeked", () => {
+      console.log("localPlayer seeked");
+      this.dispatchEvent(new Event("seeked"));
+    });
+
+    this.videoElement.addEventListener("loadedmetadata", () => {
+      console.log("localPlayer loadedmetadata");
+      this.dispatchEvent(new Event("loadedmetadata"));
+    });
+
+
+    // playback lifecycle handler
     lifecycle.addEventListener("onstatechange", (event) => {
       console.log("lifecycle state change", event.state);
       switch (event.state) {
@@ -113,6 +149,22 @@ export class UnifiedPlayer extends EventTarget {
     });
   }
 
+  get playbackRate() {
+    if (this.isInRemotePlayback) {
+      console.warn("playbackRate in remote playback is not supported yet.");
+      return this.remotePlayer.playbackRate === undefined ? 1 : this.remotePlayer.playbackRate;
+    } else {
+      return this.videoElement.playbackRate;
+    }
+  }
+
+  set playbackRate(rate) {
+    if (this.isInRemotePlayback) {
+      console.warn("playbackRate in remote playback is not supported yet.");
+    }
+    this.remotePlayer.playbackRate = this.videoElement.playbackRate = rate;
+
+  }
   /**
    * Indicates whether the player is paused.
    * 

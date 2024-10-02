@@ -1,3 +1,8 @@
+@font-face {
+  font-family: Montserrat;
+  src: url(https://fonts.gstatic.com/s/montserrat/v26/JTUSjIg1_i6t8kCHKm459WlhyyTh89Y.woff2);
+}
+
 body {
   width: 1920px;
   height: 1080px;
@@ -16,15 +21,18 @@ body {
 
 #banner {
   position: absolute;
-  width: 1920px;
-  height: 200px;
-	top: 780px;
-  left: 0px;
+  width: 1800px;
+  height: 175px;
+  top: 800px;
+  left: 60px;
   color: white;
-  padding-top: 20px;
-	font: 56pt Helvetica; 
-	font-weight: bold;
-  font-style: italic;
-  background-color: #40C4FF;
+  padding-top: 45px;
+  font: 80pt Montserrat;
+  font-weight: 500;
+  background-color: black;
+  background-image: url("images/gradient.jpg");
+  filter: drop-shadow(0px 10px 15px black);
+  border-radius: 20px;
   z-index: 2;
+  opacity: 0.9;
 }

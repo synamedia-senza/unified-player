@@ -216,9 +216,13 @@ export class UnifiedPlayer extends EventTarget {
   async load(url) {
     try {
       await this._remotePlayerLoad(url);
+    } catch (error) {
+      console.log("Couldn't load remote player. Error:", error);
+    }
+    try {
       await this._localPlayerLoad(url);
     } catch (error) {
-      console.log("Couldn't load. Error:", error);
+      console.log("Couldn't load local player. Error:", error);
     }
   }
 

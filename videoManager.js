@@ -13,11 +13,7 @@ class VideoManager {
   }
 
   async load(url) {
-    try {
-      await this.player.load(url);
-    } catch (error) {
-      console.log("Couldn't load.");
-    }
+    await this.player.load(url);
   }
 
   play() {

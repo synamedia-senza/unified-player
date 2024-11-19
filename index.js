@@ -1,4 +1,4 @@
-import { init, uiReady } from "senza-sdk";
+import {init, lifecycle, uiReady} from "senza-sdk";
 import { UnifiedPlayer } from "./unifiedPlayer.js";
 
 const TEST_VIDEO = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
@@ -8,10 +8,14 @@ let unifiedPlayer;
 window.addEventListener("load", async () => {
   try {
     await init();
+    const state = await lifecycle.getState();
+    console.log("lifecycle initial state ", state);
     unifiedPlayer = new UnifiedPlayer(video);
-    await unifiedPlayer.load(TEST_VIDEO);
-    unifiedPlayer.play();
+    unifiedPlayer.isInRemotePlayback = state === "background" || state === "inTransitionToBackground";
+
     uiReady();
+    await unifiedPlayer.load(TEST_VIDEO);
+    await unifiedPlayer.play();
   } catch (error) {
     console.error(error);
   }

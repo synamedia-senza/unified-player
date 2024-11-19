@@ -2,7 +2,7 @@ import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
 /**
  * UnifiedPlayer class that handles both local and remote playback.
- * 
+ *
  * @class UnifiedPlayer
  * @property {boolean} isInRemotePlayback - Indicates whether the player is in remote playback.
  * @property {number} currentTime - Gets or sets the current playback time.
@@ -17,10 +17,10 @@ import shaka from "shaka-player";
  * @fires UnifiedPlayer#seeked - Indicates that the player has finished seeking. NOTE currently supported only via local player.
  * @fires UnifiedPlayer#loadedmetadata - Indicates that the player has loaded metadata. NOTE currently supported only via local player.
  * @fires UnifiedPlayer#waiting - Indicates that the player is waiting for data. NOTE currently supported only via local player.
- * 
+ *
  * @example
  * import { UnifiedPlayer } from "./unifiedPlayer.js";
- * 
+ *
  * try {
  *   const videoElement = document.getElementById("video");
  *   const unifiedPlayer = new UnifiedPlayer(videoElement);
@@ -40,7 +40,7 @@ import shaka from "shaka-player";
  *     }
  *     event.preventDefault();
  *   });
- * 
+ *
  * } catch (err) {
  *   console.error("UnifiedPlayer failed with error", err);
  * }
@@ -48,7 +48,7 @@ import shaka from "shaka-player";
 export class UnifiedPlayer extends EventTarget {
   /**
    * Creates an instance of UnifiedPlayer.
-   * 
+   *
    * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
    */
   constructor(videoElement) {
@@ -58,11 +58,7 @@ export class UnifiedPlayer extends EventTarget {
     this.remotePlayer = remotePlayer;
     this.isInRemotePlayback = false;
 
-    if (this.remotePlayer.attach) {
-      this.remotePlayer.attach(this.videoElement);
-    } else {
-      this.remotePlayer.registerVideoElement(this.videoElement);
-    }
+    this.remotePlayer.attach(this.videoElement);
 
     // Remote player events
     this.remotePlayer.addEventListener("ended", () => {
@@ -102,7 +98,6 @@ export class UnifiedPlayer extends EventTarget {
         return;
       }
       console.log("localPlayer timeupdate");
-      this.remotePlayer.currentTime = this.videoElement.currentTime;
       this.dispatchEvent(new Event("timeupdate"));
     });
 
@@ -134,10 +129,9 @@ export class UnifiedPlayer extends EventTarget {
 
     // playback lifecycle handler
     lifecycle.addEventListener("onstatechange", (event) => {
-      console.log("lifecycle state change", event.state);
+      console.log("lifecycle state changed to", event.state);
       switch (event.state) {
         case "background":
-          this._localPlayerPause();
         case "inTransitionToBackground":
           this.isInRemotePlayback = true;
           break;
@@ -167,7 +161,7 @@ export class UnifiedPlayer extends EventTarget {
   }
   /**
    * Indicates whether the player is paused.
-   * 
+   *
    * @readonly
    * @type {boolean}
    */
@@ -177,7 +171,7 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Gets the current playback time.
-   * 
+   *
    * @type {number}
    */
   get currentTime() {
@@ -199,7 +193,7 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Gets the duration of the media.
-   * 
+   *
    * @readonly
    * @type {number}
    */
@@ -209,7 +203,7 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Loads a media URL into both local and remote players.
-   * 
+   *
    * @param {string} url - The URL of the media to load.
    * @returns {Promise<void>}
    */
@@ -229,7 +223,7 @@ export class UnifiedPlayer extends EventTarget {
   /**
    * Plays the media.
    * Will start the playback on the local player, to move the playback to the remote player call {@link moveToRemotePlayback}.
-   * 
+   *
    * @returns {Promise<void>}
    */
   async play() {
@@ -252,7 +246,7 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Moves playback to local player.
-   * 
+   *
    * @returns {Promise<void>}
    */
   async moveToLocalPlayback() {
@@ -269,11 +263,11 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Configures DRM settings.
-   * 
+   *
    * @param {string} server - The DRM server URL.
    * @param {(request: { body : ArrayBuffer | ArrayBufferView | null , headers : { [ key: string ]: string } , uris : string [] }) => void | null} requestFilter - Optional request filter function, allows you to add auth tokens and/or reformat the body.
    * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string }) => void | null} responseFilter - Optional response filter function.
-   * 
+   *
    * @example
    * unifiedPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
    *  console.log("Requesting license from Widevine server");
@@ -326,7 +320,7 @@ export class UnifiedPlayer extends EventTarget {
   }
   /**
    * Loads a media URL into the local player.
-   * 
+   *
    * @private
    * @param {string} url - The URL of the media to load.
    * @returns {Promise<void>}
@@ -337,7 +331,7 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Plays the media on the local player.
-   * 
+   *
    * @private
    * @returns {Promise<void>}
    */
@@ -347,7 +341,7 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Pauses the media on the local player.
-   * 
+   *
    * @private
    */
   _localPlayerPause() {
@@ -356,7 +350,7 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Loads a media URL into the remote player.
-   * 
+   *
    * @private
    * @param {string} url - The URL of the media to load.
    * @returns {Promise<void>}
@@ -367,16 +361,16 @@ export class UnifiedPlayer extends EventTarget {
 
   /**
    * Plays the media on the remote player.
-   * 
+   *
    * @private
    */
   _remotePlayerPlay() {
-    remotePlayer.play(false);
+    remotePlayer.play();
   }
 
   /**
    * Pauses the media on the remote player.
-   * 
+   *
    * @private
    */
   _remotePlayerPause() {
@@ -423,4 +417,3 @@ async function getLicenseFromServer(drmServer, licenseRequest, drmRequestFilter,
 
   return { code, responseBody: response.data };
 }
-

@@ -33,11 +33,6 @@ The `UnifiedPlayer` class is designed to handle both local and remote video play
 - **moveToLocalPlayback(): Promise<void>**: Moves playback to the local player.
 - **moveToRemotePlayback()**: Moves playback to the remote player.
 
-
-# VideoManager
-
-The `VideoManager` class acts as a higher-level controller that manages the `UnifiedPlayer` instance. It provides a simplified interface for initializing the player, loading media, and controlling playback. The `VideoManager` class abstracts the details of interacting directly with the `UnifiedPlayer`, making it easier to integrate video playback functionality into an application.
-
 ## Key Responsibilities
 
 - **Initialization**: Initializes the `UnifiedPlayer` with a given video element.
@@ -66,4 +61,11 @@ See the [Playing Video](https://developer.synamedia.com/senza/docs/playing-video
 npm ci
 npx webpack -w --config webpack.config.js
 open index.html
+```
+## Build and Run Locally
+This setup creates a local server at localhost:3000
+
+```bash
+npm ci
+npm run serve
 ```

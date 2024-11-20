@@ -8,9 +8,15 @@ module.exports = {
         filename: "bundle.js"
     },
     devServer: {
-        static: {
-            directory: path.resolve(__dirname, "dist"),
-        },
+        static: [
+            {
+                directory: path.resolve(__dirname, "dist"),
+            },
+            {
+                directory: path.resolve(__dirname),
+                publicPath: "/",
+            },
+        ],
         port: 3000, // Port to run the server
         open: true, // Automatically open the browser
         hot: true,  // Enable hot module replacement

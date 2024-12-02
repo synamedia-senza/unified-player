@@ -1,7 +1,7 @@
 import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
 /**
- * UnifiedPlayer class that handles both local and remote playback.
+ * UnifiedPlayer subclass of Shaka that handles both local and remote playback.
  * 
  * @class UnifiedPlayer
  * @property {boolean} isInRemotePlayback - Indicates whether the player is in remote playback.
@@ -45,16 +45,15 @@ import shaka from "shaka-player";
  *   console.error("UnifiedPlayer failed with error", err);
  * }
  */
-export class UnifiedPlayer extends EventTarget {
+export class UnifiedPlayer extends shaka.Player {
   /**
    * Creates an instance of UnifiedPlayer.
    * 
-   * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
+   * @param {HTMLVideoElement} mediaElement - The video element to be used for local playback.
    */
   constructor(videoElement) {
-    super();
+    super(videoElement);
     this.videoElement = videoElement;
-    this.localPlayer = new shaka.Player(this.videoElement);
     this.remotePlayer = remotePlayer;
     this.isInRemotePlayback = false;
 
@@ -85,17 +84,15 @@ export class UnifiedPlayer extends EventTarget {
       this.dispatchEvent(new Event("timeupdate"));
     });
 
+    // this.videoElement.addEventListener("ended", () => {
+    //   console.log("localPlayer ended");
+    //   this.dispatchEvent(new Event("ended"));
+    // });
 
-    // Local player events
-    this.videoElement.addEventListener("ended", () => {
-      console.log("localPlayer ended");
-      this.dispatchEvent(new Event("ended"));
-    });
-
-    this.localPlayer.addEventListener("error", (event) => {
-      console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
-      this.dispatchEvent(new CustomEvent("error", event));
-    });
+    // this.addEventListener("error", (event) => {
+    //   console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
+    //   this.dispatchEvent(new CustomEvent("error", event));
+    // });
 
     this.videoElement.addEventListener("timeupdate", () => {
       if (this.isInRemotePlayback) {
@@ -106,38 +103,37 @@ export class UnifiedPlayer extends EventTarget {
       this.dispatchEvent(new Event("timeupdate"));
     });
 
-    this.videoElement.addEventListener("canplay", () => {
-      console.log("localPlayer canplay");
-      this.dispatchEvent(new Event("canplay"));
-    });
+    // this.videoElement.addEventListener("canplay", () => {
+    //    console.log("localPlayer canplay");
+    //    this.dispatchEvent(new Event("canplay"));
+    //  });
 
-    this.videoElement.addEventListener("waiting", () => {
-      console.log("localPlayer waiting");
-      this.dispatchEvent(new Event("waiting"));
-    });
+    // this.videoElement.addEventListener("waiting", () => {
+    //   console.log("localPlayer waiting");
+    //   this.dispatchEvent(new Event("waiting"));
+    // });
 
-    this.videoElement.addEventListener("seeking", () => {
-      console.log("localPlayer seeking");
-      this.dispatchEvent(new Event("seeking"));
-    });
+    // this.videoElement.addEventListener("seeking", () => {
+    //   console.log("localPlayer seeking");
+    //   this.dispatchEvent(new Event("seeking"));
+    // });
 
-    this.videoElement.addEventListener("seeked", () => {
-      console.log("localPlayer seeked");
-      this.dispatchEvent(new Event("seeked"));
-    });
+    // this.videoElement.addEventListener("seeked", () => {
+    //   console.log("localPlayer seeked");
+    //   this.dispatchEvent(new Event("seeked"));
+    // });
 
-    this.videoElement.addEventListener("loadedmetadata", () => {
-      console.log("localPlayer loadedmetadata");
-      this.dispatchEvent(new Event("loadedmetadata"));
-    });
-
+    // this.videoElement.addEventListener("loadedmetadata", () => {
+    //   console.log("localPlayer loadedmetadata");
+    //   this.dispatchEvent(new Event("loadedmetadata"));
+    // });
 
     // playback lifecycle handler
     lifecycle.addEventListener("onstatechange", (event) => {
       console.log("lifecycle state change", event.state);
       switch (event.state) {
         case "background":
-          this._localPlayerPause();
+          super.pause();
         case "inTransitionToBackground":
           this.isInRemotePlayback = true;
           break;
@@ -154,7 +150,7 @@ export class UnifiedPlayer extends EventTarget {
       console.warn("playbackRate in remote playback is not supported yet.");
       return this.remotePlayer.playbackRate === undefined ? 1 : this.remotePlayer.playbackRate;
     } else {
-      return this.videoElement.playbackRate;
+      return super.playbackRate;
     }
   }
 
@@ -162,7 +158,7 @@ export class UnifiedPlayer extends EventTarget {
     if (this.isInRemotePlayback) {
       console.warn("playbackRate in remote playback is not supported yet.");
     }
-    this.remotePlayer.playbackRate = this.videoElement.playbackRate = rate;
+    this.remotePlayer.playbackRate = super.playbackRate = rate;
 
   }
   /**
@@ -172,7 +168,7 @@ export class UnifiedPlayer extends EventTarget {
    * @type {boolean}
    */
   get paused() {
-    return this.isInRemotePlayback ? false : this.videoElement.paused;
+    return this.isInRemotePlayback ? false : super.paused;
   }
 
   /**
@@ -181,7 +177,7 @@ export class UnifiedPlayer extends EventTarget {
    * @type {number}
    */
   get currentTime() {
-    return this.isInRemotePlayback ? remotePlayer.currentTime : this.videoElement.currentTime;
+    return this.isInRemotePlayback ? this.remotePlayer.currentTime : super.currentTime;
   }
 
   /**
@@ -193,7 +189,7 @@ export class UnifiedPlayer extends EventTarget {
     if (this.isInRemotePlayback) {
       console.warn("Setting currentTime while in remote playback is not supported yet.");
     } else {
-      remotePlayer.currentTime = this.videoElement.currentTime = time;
+      this.remotePlayer.currentTime = super.currentTime = time;
     }
   }
 
@@ -204,7 +200,7 @@ export class UnifiedPlayer extends EventTarget {
    * @type {number}
    */
   get duration() {
-    return this.videoElement.duration;
+     return super.duration;
   }
 
   /**
@@ -215,12 +211,12 @@ export class UnifiedPlayer extends EventTarget {
    */
   async load(url) {
     try {
-      await this._remotePlayerLoad(url);
+      await this.remotePlayer.load(url);
     } catch (error) {
       console.log("Couldn't load remote player. Error:", error);
     }
     try {
-      await this._localPlayerLoad(url);
+      await super.load(url);
     } catch (error) {
       console.log("Couldn't load local player. Error:", error);
     }
@@ -233,8 +229,8 @@ export class UnifiedPlayer extends EventTarget {
    * @returns {Promise<void>}
    */
   async play() {
-    await this._localPlayerPlay();
-    this._remotePlayerPlay();
+    this.videoElement.play();
+    this.remotePlayer.play(false);
   }
 
   /**
@@ -245,8 +241,8 @@ export class UnifiedPlayer extends EventTarget {
     if (this.isInRemotePlayback) {
       console.warn("Pausing while in remote playback is not supported yet.");
     } else {
-      this._localPlayerPause();
-      this._remotePlayerPause();
+      this.videoElement.pause();
+      this.remotePlayer.pause();
     }
   }
 
@@ -256,7 +252,7 @@ export class UnifiedPlayer extends EventTarget {
    * @returns {Promise<void>}
    */
   async moveToLocalPlayback() {
-    this._localPlayerPlay();
+    this.videoElement.play();
     lifecycle.moveToForeground();
   }
 
@@ -281,7 +277,7 @@ export class UnifiedPlayer extends EventTarget {
    * });
    */
   configureDrm(server, requestFilter, responseFilter) {
-    this.localPlayer.configure({
+    this.configure({
       drm: {
         servers: {
           'com.widevine.alpha': server,
@@ -289,7 +285,7 @@ export class UnifiedPlayer extends EventTarget {
       }
     });
 
-    const networkingEngine = this.localPlayer.getNetworkingEngine();
+    const networkingEngine = this.getNetworkingEngine();
 
     networkingEngine.registerRequestFilter((type, request) => {
       if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
@@ -323,64 +319,6 @@ export class UnifiedPlayer extends EventTarget {
       console.log("remotePlayer", "license-request", "Writing response to remote player", res.code);
       event.writeLicenseResponse(res.code, res.responseBody);
     });
-  }
-  /**
-   * Loads a media URL into the local player.
-   * 
-   * @private
-   * @param {string} url - The URL of the media to load.
-   * @returns {Promise<void>}
-   */
-  _localPlayerLoad(url) {
-    return this.localPlayer.load(url);
-  }
-
-  /**
-   * Plays the media on the local player.
-   * 
-   * @private
-   * @returns {Promise<void>}
-   */
-  _localPlayerPlay() {
-    return this.videoElement.play();
-  }
-
-  /**
-   * Pauses the media on the local player.
-   * 
-   * @private
-   */
-  _localPlayerPause() {
-    this.videoElement.pause();
-  }
-
-  /**
-   * Loads a media URL into the remote player.
-   * 
-   * @private
-   * @param {string} url - The URL of the media to load.
-   * @returns {Promise<void>}
-   */
-  _remotePlayerLoad(url) {
-    return remotePlayer.load(url);
-  }
-
-  /**
-   * Plays the media on the remote player.
-   * 
-   * @private
-   */
-  _remotePlayerPlay() {
-    remotePlayer.play(false);
-  }
-
-  /**
-   * Pauses the media on the remote player.
-   * 
-   * @private
-   */
-  _remotePlayerPause() {
-    remotePlayer.pause();
   }
 }
 

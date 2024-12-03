@@ -56,7 +56,7 @@ export class UnifiedPlayer extends EventTarget {
     this.videoElement = videoElement;
     this.localPlayer = new shaka.Player(this.videoElement);
     this.remotePlayer = remotePlayer;
-    this.isInRemotePlayback = false;
+    this.isInRemotePlayback = undefined;
 
     this.remotePlayer.attach(this.videoElement);
 
@@ -126,20 +126,10 @@ export class UnifiedPlayer extends EventTarget {
       this.dispatchEvent(new Event("loadedmetadata"));
     });
 
-
     // playback lifecycle handler
     lifecycle.addEventListener("onstatechange", (event) => {
       console.log("lifecycle state changed to", event.state);
-      switch (event.state) {
-        case "background":
-        case "inTransitionToBackground":
-          this.isInRemotePlayback = true;
-          break;
-        case "foreground":
-        case "inTransitionToForeground":
-          this.isInRemotePlayback = false;
-          break;
-      }
+      this.isInRemotePlayback = event.state === "background" || event.state === "inTransitionToBackground";
     });
   }
 
@@ -159,6 +149,7 @@ export class UnifiedPlayer extends EventTarget {
     this.remotePlayer.playbackRate = this.videoElement.playbackRate = rate;
 
   }
+
   /**
    * Indicates whether the player is paused.
    *
@@ -218,6 +209,38 @@ export class UnifiedPlayer extends EventTarget {
     } catch (error) {
       console.log("Couldn't load local player. Error:", error);
     }
+  }
+
+  /**
+   * Toggles between local and remote playback
+   */
+  async togglePlayback() {
+    await this._fetchUpdatedState();
+    if (this.isInRemotePlayback) {
+      await this.moveToLocalPlayback();
+    } else {
+      this.moveToRemotePlayback();
+    }
+  }
+
+  /**
+   * Play/Pause the player
+   */
+  async playPause() {
+    await this._fetchUpdatedState();
+    if (this.paused) {
+      await this.play();
+    } else {
+      this.pause();
+    }
+  }
+
+  /**
+   * Seeks the player by x seconds
+   */
+  async skip(seconds) {
+    await this._fetchUpdatedState();
+    this.currentTime = this.currentTime + seconds;
   }
 
   /**
@@ -318,6 +341,19 @@ export class UnifiedPlayer extends EventTarget {
       event.writeLicenseResponse(res.code, res.responseBody);
     });
   }
+
+  /**
+   * Lazy load the UI state to update isInRemotePlayback value
+   *
+   * @private
+   */
+  async _fetchUpdatedState() {
+    if (this.isInRemotePlayback === undefined) {
+      const state = await lifecycle.getState();
+      this.isInRemotePlayback = state === "background" || state === "inTransitionToBackground";
+    }
+  }
+
   /**
    * Loads a media URL into the local player.
    *

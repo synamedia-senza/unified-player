@@ -1,16 +1,16 @@
 import { init, uiReady } from "senza-sdk";
-import { UnifiedPlayer } from "./unifiedPlayer.js";
+import { SenzaShakaPlayer } from "./senzaShakaPlayer.js";
 
 const TEST_VIDEO = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
 
-let unifiedPlayer;
+let player;
 
 window.addEventListener("load", async () => {
   try {
     await init();
-    unifiedPlayer = new UnifiedPlayer(video);
-    await unifiedPlayer.load(TEST_VIDEO);
-    unifiedPlayer.play();
+    player = new SenzaShakaPlayer(video);
+    await player.load(TEST_VIDEO);
+    player.play();
     uiReady();
   } catch (error) {
     console.error(error);
@@ -20,7 +20,7 @@ window.addEventListener("load", async () => {
 document.addEventListener("keydown", async function (event) {
   switch (event.key) {
     case "Enter": await togglePlayback(); break;
-    case "Escape": playPause(); break;
+    case "Escape": await playPause(); break;
     case "ArrowLeft": skip(-30); break;
     case "ArrowRight": skip(30); break;
     default: return;
@@ -29,21 +29,21 @@ document.addEventListener("keydown", async function (event) {
 });
 
 async function togglePlayback() {
-  if (unifiedPlayer.isInRemotePlayback) {
-    await unifiedPlayer.moveToLocalPlayback();
+  if (player.isInRemotePlayback) {
+    await player.moveToLocalPlayback();
   } else {
-    unifiedPlayer.moveToRemotePlayback();
+    player.moveToRemotePlayback();
   }
 }
 
-function playPause() {
-  if (unifiedPlayer.paused) {
-    unifiedPlayer.play();
+async function playPause() {
+  if (player.paused) {
+    await player.play();
   } else {
-    unifiedPlayer.pause();
+    await player.pause();
   }
 }
 
 function skip(seconds) {
-  unifiedPlayer.currentTime = unifiedPlayer.currentTime + seconds;
+  player.currentTime = player.currentTime + seconds;
 }

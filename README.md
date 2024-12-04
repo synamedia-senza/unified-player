@@ -1,8 +1,6 @@
-# Unified player
+# Senza Shaka Player
 
-
-
-The `UnifiedPlayer` class is designed to handle both local and remote video playback seamlessly. It abstracts the complexities of switching between local playback using Shaka Player and remote playback using the Senza device player.
+The `SenzaShakaPlayer` is a subclass of the Shaka player that seamlessly handles playback of both local and remote video. It abstracts the complexities of switching between local playback using Shaka Player and remote playback using the Senza cloud connector.
 
 ## Properties
 
@@ -32,11 +30,6 @@ The `UnifiedPlayer` class is designed to handle both local and remote video play
 - **configureDrm(server: string, requestFilter?: Function, responseFilter?: Function)**: Configures DRM settings for the player.
 - **moveToLocalPlayback(): Promise<void>**: Moves playback to the local player.
 - **moveToRemotePlayback()**: Moves playback to the remote player.
-
-
-# VideoManager
-
-The `VideoManager` class acts as a higher-level controller that manages the `UnifiedPlayer` instance. It provides a simplified interface for initializing the player, loading media, and controlling playback. The `VideoManager` class abstracts the details of interacting directly with the `UnifiedPlayer`, making it easier to integrate video playback functionality into an application.
 
 ## Key Responsibilities
 

@@ -1,39 +1,38 @@
 import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
 /**
- * UnifiedPlayer subclass of Shaka that handles both local and remote playback.
+ * SenzaShakaPlayer subclass of Shaka that handles both local and remote playback.
  * 
- * @class UnifiedPlayer
+ * @class SenzaShakaPlayer
  * @property {boolean} isInRemotePlayback - Indicates whether the player is in remote playback.
  * @property {number} currentTime - Gets or sets the current playback time.
- * @property {number} duration - Gets the duration of the media.
  * @property {boolean} paused - Indicates whether the player is paused.
  * @property {number} playbackRate - Gets or sets the playback rate. NOTE currently supported only on local player.
- * @fires UnifiedPlayer#ended - Indicates that the media has ended.
- * @fires UnifiedPlayer#error - Indicates that an error occurred.
- * @fires UnifiedPlayer#timeupdate - Indicates that the current playback time has changed.
- * @fires UnifiedPlayer#canplay - Indicates that the media is ready to play. NOTE currently supported only via local player.
- * @fires UnifiedPlayer#seeking - Indicates that the player is seeking. NOTE currently supported only via local player.
- * @fires UnifiedPlayer#seeked - Indicates that the player has finished seeking. NOTE currently supported only via local player.
- * @fires UnifiedPlayer#loadedmetadata - Indicates that the player has loaded metadata. NOTE currently supported only via local player.
- * @fires UnifiedPlayer#waiting - Indicates that the player is waiting for data. NOTE currently supported only via local player.
+ * @fires SenzaShakaPlayer#ended - Indicates that the media has ended.
+ * @fires SenzaShakaPlayer#error - Indicates that an error occurred.
+ * @fires SenzaShakaPlayer#timeupdate - Indicates that the current playback time has changed.
+ * @fires SenzaShakaPlayer#canplay - Indicates that the media is ready to play. NOTE currently supported only via local player.
+ * @fires SenzaShakaPlayer#seeking - Indicates that the player is seeking. NOTE currently supported only via local player.
+ * @fires SenzaShakaPlayer#seeked - Indicates that the player has finished seeking. NOTE currently supported only via local player.
+ * @fires SenzaShakaPlayer#loadedmetadata - Indicates that the player has loaded metadata. NOTE currently supported only via local player.
+ * @fires SenzaShakaPlayer#waiting - Indicates that the player is waiting for data. NOTE currently supported only via local player.
  * 
  * @example
- * import { UnifiedPlayer } from "./unifiedPlayer.js";
+ * import { SenzaShakaPlayer } from "./senzaShakaPlayer.js";
  * 
  * try {
  *   const videoElement = document.getElementById("video");
- *   const unifiedPlayer = new UnifiedPlayer(videoElement);
- *   await unifiedPlayer.load("http://playable.url/file.mpd");
- *   await unifiedPlayer.play(); // Will start the playback on the local player
+ *   const senzaShakaPlayer = new SenzaShakaPlayer(videoElement);
+ *   await senzaShakaPlayer.load("http://playable.url/file.mpd");
+ *   await senzaShakaPlayer.play(); // Will start the playback on the local player
  *   document.addEventListener("keydown", async function (event) {
  *     switch (event.key) {
  *       case "ArrowLeft": {
- *         await unifiedPlayer.moveToLocalPlayback(); // Will move the playback to the local player
+ *         await senzaShakaPlayer.moveToLocalPlayback(); // Will move the playback to the local player
  *         break;
  *       }
  *       case "ArrowRight": {
- *         unifiedPlayer.moveToRemotePlayback(); // Will move the playback to the remote player
+ *         senzaShakaPlayer.moveToRemotePlayback(); // Will move the playback to the remote player
  *         break;
  *       }
  *       default: return;
@@ -42,12 +41,12 @@ import shaka from "shaka-player";
  *   });
  * 
  * } catch (err) {
- *   console.error("UnifiedPlayer failed with error", err);
+ *   console.error("SenzaShakaPlayer failed with error", err);
  * }
  */
-export class UnifiedPlayer extends shaka.Player {
+export class SenzaShakaPlayer extends shaka.Player {
   /**
-   * Creates an instance of UnifiedPlayer.
+   * Creates an instance of SenzaShakaPlayer, which is a subclass of shaka.Player.
    * 
    * @param {HTMLVideoElement} mediaElement - The video element to be used for local playback.
    */
@@ -79,7 +78,6 @@ export class UnifiedPlayer extends shaka.Player {
       if (!this.isInRemotePlayback) {
         return;
       }
-      console.log("remotePlayer timeupdate");
       this.videoElement.currentTime = this.remotePlayer.currentTime;
       this.dispatchEvent(new Event("timeupdate"));
     });
@@ -98,7 +96,6 @@ export class UnifiedPlayer extends shaka.Player {
       if (this.isInRemotePlayback) {
         return;
       }
-      console.log("localPlayer timeupdate");
       this.remotePlayer.currentTime = this.videoElement.currentTime;
       this.dispatchEvent(new Event("timeupdate"));
     });
@@ -133,7 +130,7 @@ export class UnifiedPlayer extends shaka.Player {
       console.log("lifecycle state change", event.state);
       switch (event.state) {
         case "background":
-          super.pause();
+          this.videoElement.pause();
         case "inTransitionToBackground":
           this.isInRemotePlayback = true;
           break;
@@ -150,7 +147,7 @@ export class UnifiedPlayer extends shaka.Player {
       console.warn("playbackRate in remote playback is not supported yet.");
       return this.remotePlayer.playbackRate === undefined ? 1 : this.remotePlayer.playbackRate;
     } else {
-      return super.playbackRate;
+      return this.videoElement.playbackRate;
     }
   }
 
@@ -158,7 +155,7 @@ export class UnifiedPlayer extends shaka.Player {
     if (this.isInRemotePlayback) {
       console.warn("playbackRate in remote playback is not supported yet.");
     }
-    this.remotePlayer.playbackRate = super.playbackRate = rate;
+    this.remotePlayer.playbackRate = this.videoElement.playbackRate = rate;
 
   }
   /**
@@ -168,7 +165,7 @@ export class UnifiedPlayer extends shaka.Player {
    * @type {boolean}
    */
   get paused() {
-    return this.isInRemotePlayback ? false : super.paused;
+    return this.isInRemotePlayback ? false : this.videoElement.paused;
   }
 
   /**
@@ -177,7 +174,7 @@ export class UnifiedPlayer extends shaka.Player {
    * @type {number}
    */
   get currentTime() {
-    return this.isInRemotePlayback ? this.remotePlayer.currentTime : super.currentTime;
+    return this.isInRemotePlayback ? this.remotePlayer.currentTime : this.videoElement.currentTime;
   }
 
   /**
@@ -189,18 +186,8 @@ export class UnifiedPlayer extends shaka.Player {
     if (this.isInRemotePlayback) {
       console.warn("Setting currentTime while in remote playback is not supported yet.");
     } else {
-      this.remotePlayer.currentTime = super.currentTime = time;
+      this.remotePlayer.currentTime = this.videoElement.currentTime = time;
     }
-  }
-
-  /**
-   * Gets the duration of the media.
-   * 
-   * @readonly
-   * @type {number}
-   */
-  get duration() {
-     return super.duration;
   }
 
   /**
@@ -229,20 +216,20 @@ export class UnifiedPlayer extends shaka.Player {
    * @returns {Promise<void>}
    */
   async play() {
-    this.videoElement.play();
-    this.remotePlayer.play(false);
+    await this.videoElement.play();
+    await this.remotePlayer.play(false);
   }
 
   /**
    * Pauses the media on both local and remote players.
    * NOTE: When in remote playback, this will not have any affect.
    */
-  pause() {
+  async pause() {
     if (this.isInRemotePlayback) {
       console.warn("Pausing while in remote playback is not supported yet.");
     } else {
-      this.videoElement.pause();
-      this.remotePlayer.pause();
+      await this.videoElement.pause();
+      await this.remotePlayer.pause();
     }
   }
 
@@ -271,7 +258,7 @@ export class UnifiedPlayer extends shaka.Player {
    * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string }) => void | null} responseFilter - Optional response filter function.
    * 
    * @example
-   * unifiedPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
+   * senzaShakaPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
    *  console.log("Requesting license from Widevine server");
    *  request.headers["Authorization"] = "Bearer <...>";
    * });

@@ -60,3 +60,10 @@ npm ci
 npx webpack -w --config webpack.config.js
 open index.html
 ```
+## Build and Run Locally
+This setup creates a local server at localhost:3000
+
+```bash
+npm ci
+npm run serve
+```

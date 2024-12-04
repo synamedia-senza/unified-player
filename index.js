@@ -7,11 +7,11 @@ let player;
 
 window.addEventListener("load", async () => {
   try {
-    await init();
     player = new SenzaShakaPlayer(video);
-    await player.load(TEST_VIDEO);
-    player.play();
+    await init();
     uiReady();
+    await player.load(TEST_VIDEO);
+    await player.play();
   } catch (error) {
     console.error(error);
   }
@@ -19,31 +19,11 @@ window.addEventListener("load", async () => {
 
 document.addEventListener("keydown", async function (event) {
   switch (event.key) {
-    case "Enter": await togglePlayback(); break;
-    case "Escape": await playPause(); break;
-    case "ArrowLeft": skip(-30); break;
-    case "ArrowRight": skip(30); break;
+    case "Enter": await player.togglePlayback(); break;
+    case "Escape": await player.playPause(); break;
+    case "ArrowLeft": await player.skip(-30); break;
+    case "ArrowRight": await player.skip(30); break;
     default: return;
   }
   event.preventDefault();
 });
-
-async function togglePlayback() {
-  if (player.isInRemotePlayback) {
-    await player.moveToLocalPlayback();
-  } else {
-    player.moveToRemotePlayback();
-  }
-}
-
-async function playPause() {
-  if (player.paused) {
-    await player.play();
-  } else {
-    await player.pause();
-  }
-}
-
-function skip(seconds) {
-  player.currentTime = player.currentTime + seconds;
-}

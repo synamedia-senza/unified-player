@@ -22,17 +22,17 @@ import shaka from "shaka-player";
  * 
  * try {
  *   const videoElement = document.getElementById("video");
- *   const senzaShakaPlayer = new SenzaShakaPlayer(videoElement);
- *   await senzaShakaPlayer.load("http://playable.url/file.mpd");
- *   await senzaShakaPlayer.play(); // Will start the playback on the local player
+ *   const player = new SenzaShakaPlayer(videoElement);
+ *   await player.load("http://playable.url/file.mpd");
+ *   await player.play(); // Will start the playback on the local player
  *   document.addEventListener("keydown", async function (event) {
  *     switch (event.key) {
  *       case "ArrowLeft": {
- *         await senzaShakaPlayer.moveToLocalPlayback(); // Will move the playback to the local player
+ *         await player.moveToLocalPlayback(); // Will move the playback to the local player
  *         break;
  *       }
  *       case "ArrowRight": {
- *         senzaShakaPlayer.moveToRemotePlayback(); // Will move the playback to the remote player
+ *         player.moveToRemotePlayback(); // Will move the playback to the remote player
  *         break;
  *       }
  *       default: return;
@@ -48,7 +48,7 @@ export class SenzaShakaPlayer extends shaka.Player {
   /**
    * Creates an instance of SenzaShakaPlayer, which is a subclass of shaka.Player.
    * 
-   * @param {HTMLVideoElement} mediaElement - The video element to be used for local playback.
+   * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
    */
   constructor(videoElement) {
     super(videoElement);

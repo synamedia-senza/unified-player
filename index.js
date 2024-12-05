@@ -9,9 +9,11 @@ window.addEventListener("load", async () => {
   try {
     await init();
     player = new SenzaShakaPlayer(video);
-    uiReady();
     await player.load(TEST_VIDEO);
-    await player.play();
+    if (!player.isInRemotePlayback) {
+      await player.play();
+    }
+    uiReady();
   } catch (error) {
     console.error(error);
   }

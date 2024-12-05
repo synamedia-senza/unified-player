@@ -158,10 +158,12 @@ export class SenzaShakaPlayer extends shaka.Player {
    * @returns {Promise<void>}
    */
   async load(url) {
-    try {
-      await this.remotePlayer.load(url);
-    } catch (error) {
-      console.log("Couldn't load remote player. Error:", error);
+    if (!this.isInRemotePlayback || remotePlayer.getAssetUri() !== url) {
+      try {
+        await this.remotePlayer.load(url);
+      } catch (error) {
+        console.log("Couldn't load remote player. Error:", error);
+      }
     }
     try {
       await super.load(url);

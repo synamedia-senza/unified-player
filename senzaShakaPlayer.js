@@ -23,7 +23,7 @@ import shaka from "shaka-player";
  *   const videoElement = document.getElementById("video");
  *   const player = new SenzaShakaPlayer(videoElement);
  *   await player.load("http://playable.url/file.mpd");
- *   await player.play(); // Will start the playback on the local player
+ *   await player.getMediaElement().play(); // Will start the playback on the local player
  *   document.addEventListener("keydown", async function (event) {
  *     switch (event.key) {
  *       case "ArrowLeft": {
@@ -56,42 +56,100 @@ export class SenzaShakaPlayer extends shaka.Player {
 
     this.remotePlayer.attach(this.videoElement);
 
-    // Remote player events
+    this.addOverrides(videoElement);
+    this.addEventListeners();
+  }
+
+ /**
+  * Replaces the implementation of methods on the video element including play and pause
+  * with a new function that calls the original as well as the equivalent methods on the
+  * remote player.
+  */
+  addOverrides(videoElement) {
+    // override play()
+    const localPlayerPlay = videoElement.play.bind(videoElement);
+    videoElement.play = async () => {
+      await localPlayerPlay();
+      await this.remotePlayer.play();
+    };
+
+    // override pause()
+    const localPlayerPause = videoElement.pause.bind(videoElement);
+    videoElement.pause = async () => {
+      if (this.isInRemotePlayback) {
+        console.warn("Pausing while in remote playback is not supported yet.");
+      } else {
+        await localPlayerPause();
+        await this.remotePlayer.pause();
+      }
+    };
+
+    // override currentTime
+    videoElement.getCurrentTime = () => videoElement.__proto__.__lookupGetter__('currentTime').call(videoElement);
+    videoElement.setCurrentTime = (value) => videoElement.__proto__.__lookupSetter__('currentTime').call(videoElement, value);
+    Object.defineProperty(videoElement, 'currentTime', {
+      get: () => {
+        return this.isInRemotePlayback ? this.remotePlayer.currentTime : videoElement.getCurrentTime();
+      },
+      set: (time) => {
+        if (this.isInRemotePlayback) {
+          console.warn("Setting currentTime while in remote playback is not supported yet.");
+        } else {
+          console.log('Set currentTime:', time);
+          videoElement.setCurrentTime(time);
+          this.remotePlayer.currentTime = time;
+        }
+      },
+      configurable: true,
+      enumerable: true,
+    });
+  }
+
+  addEventListeners() {
     this.remotePlayer.addEventListener("ended", () => {
       console.log("remotePlayer ended");
       lifecycle.moveToForeground();
-      this.dispatchEvent(new Event("ended"));
+      this.videoElement.dispatchEvent(new Event("ended"));
     });
 
     this.remotePlayer.addEventListener("error", (event) => {
       console.log("remotePlayer error:", event.detail.errorCode, event.detail.message);
-      this.dispatchEvent(new CustomEvent("error", event));
+      this.videoElement.dispatchEvent(new CustomEvent("error", event));
     });
 
     this.remotePlayer.addEventListener("timeupdate", () => {
       if (!this.isInRemotePlayback) {
         return;
       }
-      this.videoElement.currentTime = this.remotePlayer.currentTime;
-      this.dispatchEvent(new Event("timeupdate"));
+      this.videoElement.setCurrentTime(this.remotePlayer.currentTime);
+      // not necessary to dispatch a new event, since setting the current time will do so anyway
+      // this.videoElement.dispatchEvent(new Event("timeupdate"));
     });
 
     this.addEventListener("error", (event) => {
       console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
     });
-
+    
     this.videoElement.addEventListener("timeupdate", () => {
       if (this.isInRemotePlayback) {
         return;
       }
+      // added this back as it seems to work better with it. Let's discuss why it was removed.
+      this.remotePlayer.currentTime = this.videoElement.getCurrentTime();
       this.dispatchEvent(new Event("timeupdate"));
     });
   }
 
+  /**
+   * Should we move this to lifecycle?
+   */
   get isInRemotePlayback() {
     return lifecycle.state === lifecycle.UiState.BACKGROUND || lifecycle.state === lifecycle.UiState.IN_TRANSITION_TO_BACKGROUND;
   }
 
+  /**
+   * DEPRECATED: use the property on the media element. Remote player only supports 1x.
+   */
   get playbackRate() {
     if (this.isInRemotePlayback) {
       console.warn("playbackRate in remote playback is not supported yet.");
@@ -101,16 +159,19 @@ export class SenzaShakaPlayer extends shaka.Player {
     }
   }
 
+  /**
+   * DEPRECATED: use the property on the media element. Remote player only supports 1x.
+   */
   set playbackRate(rate) {
     if (this.isInRemotePlayback) {
       console.warn("playbackRate in remote playback is not supported yet.");
     }
     this.remotePlayer.playbackRate = this.videoElement.playbackRate = rate;
-
   }
 
   /**
    * Indicates whether the player is paused.
+   * DEPRECATED: use the property on the media element, no need to override it.
    *
    * @readonly
    * @type {boolean}
@@ -121,34 +182,22 @@ export class SenzaShakaPlayer extends shaka.Player {
 
   /**
    * Gets the current playback time.
+   * DEPRECATED: use the overridden property on the media element.
    *
    * @type {number}
    */
   get currentTime() {
-    return this.isInRemotePlayback ? this.remotePlayer.currentTime : this.videoElement.currentTime;
+    this.videoElement.currentTime;
   }
 
   /**
    * Sets the current playback time.
    * NOTE: When in remote playback, this will not affect the remote player.
+   * DEPRECATED: use the overridden property on the media element.
    * @param {number} time - The time to set the current playback to.
    */
   set currentTime(time) {
-    if (this.isInRemotePlayback) {
-      console.warn("Setting currentTime while in remote playback is not supported yet.");
-    } else {
-      this.remotePlayer.currentTime = this.videoElement.currentTime = time;
-    }
-  }
-
-  /**
-   * Gets the duration of the media.
-   *
-   * @readonly
-   * @type {number}
-   */
-  get duration() {
-    return this.videoElement.duration;
+    this.videoElement.currentTime = time;
   }
 
   /**
@@ -184,45 +233,43 @@ export class SenzaShakaPlayer extends shaka.Player {
   }
 
   /**
-   * Play/Pause the player
+   * Switches between play and pause.
    */
   async playPause() {
-    if (this.paused) {
-      await this.play();
+    if (this.videoElement.paused) {
+      await this.videoElement.play();
     } else {
-      await this.pause();
+      await this.videoElement.pause();
     }
   }
 
   /**
-   * Seeks the player by x seconds
+   * Adjusts the current time of the player by a given number of seconds.
+   * Moves forward if the number is positive, or backwards if it is negative.
    */
   skip(seconds) {
-    this.currentTime = this.currentTime + seconds;
+    this.videoElement.currentTime = this.videoElement.currentTime + seconds;
   }
 
   /**
    * Plays the media.
-   * Will start the playback on the local player, to move the playback to the remote player call {@link moveToRemotePlayback}.
+   * Will start the playback on the local player.
+   * To move the playback to the remote player, call {@link moveToRemotePlayback}.
+   * DEPRECATED: use the overridden method on the media element.
    *
    * @returns {Promise<void>}
    */
   async play() {
     await this.videoElement.play();
-    await this.remotePlayer.play();
   }
 
   /**
    * Pauses the media on both local and remote players.
    * NOTE: When in remote playback, this will not have any affect.
+   * DEPRECATED: use the overridden method on the media element.
    */
   async pause() {
-    if (this.isInRemotePlayback) {
-      console.warn("Pausing while in remote playback is not supported yet.");
-    } else {
-      await this.videoElement.pause();
-      await this.remotePlayer.pause();
-    }
+    await this.videoElement.pause();
   }
 
   /**
@@ -231,7 +278,7 @@ export class SenzaShakaPlayer extends shaka.Player {
    * @returns {Promise<void>}
    */
   async moveToLocalPlayback() {
-    await this.videoElement.play();
+    await this.videoElement.play(); // why is this needed?
     lifecycle.moveToForeground();
   }
 

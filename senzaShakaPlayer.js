@@ -210,7 +210,7 @@ export class SenzaShakaPlayer extends shaka.Player {
    */
   async play() {
     await this.videoElement.play();
-    await this.remotePlayer.play(false);
+    await this.remotePlayer.play();
   }
 
   /**
@@ -232,7 +232,7 @@ export class SenzaShakaPlayer extends shaka.Player {
    * @returns {Promise<void>}
    */
   async moveToLocalPlayback() {
-    this.videoElement.play();
+    await this.videoElement.play();
     lifecycle.moveToForeground();
   }
 

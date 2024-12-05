@@ -78,15 +78,9 @@ export class SenzaShakaPlayer extends shaka.Player {
       this.dispatchEvent(new Event("timeupdate"));
     });
 
-    // this.videoElement.addEventListener("ended", () => {
-    //   console.log("localPlayer ended");
-    //   this.dispatchEvent(new Event("ended"));
-    // });
-
-    // this.addEventListener("error", (event) => {
-    //   console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
-    //   this.dispatchEvent(new CustomEvent("error", event));
-    // });
+    this.addEventListener("error", (event) => {
+      console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
+    });
 
     this.videoElement.addEventListener("timeupdate", () => {
       if (this.isInRemotePlayback) {
@@ -94,31 +88,6 @@ export class SenzaShakaPlayer extends shaka.Player {
       }
       this.dispatchEvent(new Event("timeupdate"));
     });
-
-    // this.videoElement.addEventListener("canplay", () => {
-    //    console.log("localPlayer canplay");
-    //    this.dispatchEvent(new Event("canplay"));
-    //  });
-
-    // this.videoElement.addEventListener("waiting", () => {
-    //   console.log("localPlayer waiting");
-    //   this.dispatchEvent(new Event("waiting"));
-    // });
-
-    // this.videoElement.addEventListener("seeking", () => {
-    //   console.log("localPlayer seeking");
-    //   this.dispatchEvent(new Event("seeking"));
-    // });
-
-    // this.videoElement.addEventListener("seeked", () => {
-    //   console.log("localPlayer seeked");
-    //   this.dispatchEvent(new Event("seeked"));
-    // });
-
-    // this.videoElement.addEventListener("loadedmetadata", () => {
-    //   console.log("localPlayer loadedmetadata");
-    //   this.dispatchEvent(new Event("loadedmetadata"));
-    // });
 
     // playback lifecycle handler
     lifecycle.addEventListener("onstatechange", (event) => {

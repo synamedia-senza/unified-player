@@ -23,7 +23,7 @@ document.addEventListener("keydown", async function (event) {
   switch (event.key) {
     case "Enter": await player.togglePlayback(); break;
     case "Escape": await player.playPause(); break;
-    case "ArrowLeft": await player.skip(-30); break;
+    case "ArrowLeft": player.skip(-30); break;
     case "ArrowRight": player.skip(30); break;
     default: return;
   }

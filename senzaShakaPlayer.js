@@ -187,7 +187,6 @@ export class SenzaShakaPlayer extends shaka.Player {
    * Play/Pause the player
    */
   async playPause() {
-    await this._fetchUpdatedState();
     if (this.paused) {
       await this.play();
     } else {

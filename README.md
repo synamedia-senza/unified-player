@@ -1,8 +1,6 @@
-# Unified player
+# Senza Shaka Player
 
-
-
-The `UnifiedPlayer` class is designed to handle both local and remote video playback seamlessly. It abstracts the complexities of switching between local playback using Shaka Player and remote playback using the Senza device player.
+The `SenzaShakaPlayer` is a subclass of the Shaka player that seamlessly handles playback of both local and remote video. It abstracts the complexities of switching between local playback using Shaka Player and remote playback using the Senza cloud connector.
 
 ## Properties
 

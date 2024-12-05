@@ -2,9 +2,8 @@ import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
 /**
  * SenzaShakaPlayer subclass of Shaka that handles both local and remote playback.
- * 
+ *
  * @class SenzaShakaPlayer
- * @property {boolean} isInRemotePlayback - Indicates whether the player is in remote playback.
  * @property {number} currentTime - Gets or sets the current playback time.
  * @property {boolean} paused - Indicates whether the player is paused.
  * @property {number} playbackRate - Gets or sets the playback rate. NOTE currently supported only on local player.
@@ -16,10 +15,10 @@ import shaka from "shaka-player";
  * @fires SenzaShakaPlayer#seeked - Indicates that the player has finished seeking. NOTE currently supported only via local player.
  * @fires SenzaShakaPlayer#loadedmetadata - Indicates that the player has loaded metadata. NOTE currently supported only via local player.
  * @fires SenzaShakaPlayer#waiting - Indicates that the player is waiting for data. NOTE currently supported only via local player.
-  * 
+  *
  * @example
  * import { SenzaShakaPlayer } from "./senzaShakaPlayer.js";
- * 
+ *
  * try {
  *   const videoElement = document.getElementById("video");
  *   const player = new SenzaShakaPlayer(videoElement);
@@ -47,14 +46,13 @@ import shaka from "shaka-player";
 export class SenzaShakaPlayer extends shaka.Player {
   /**
    * Creates an instance of SenzaShakaPlayer, which is a subclass of shaka.Player.
-   * 
+   *
    * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
    */
   constructor(videoElement) {
     super(videoElement);
     this.videoElement = videoElement;
     this.remotePlayer = remotePlayer;
-    this.isInRemotePlayback = undefined;
 
     this.remotePlayer.attach(this.videoElement);
 
@@ -88,12 +86,10 @@ export class SenzaShakaPlayer extends shaka.Player {
       }
       this.dispatchEvent(new Event("timeupdate"));
     });
+  }
 
-    // playback lifecycle handler
-    lifecycle.addEventListener("onstatechange", (event) => {
-      console.log("lifecycle state changed to", event.state);
-      this.isInRemotePlayback = event.state === "background" || event.state === "inTransitionToBackground";
-    });
+  get isInRemotePlayback() {
+    return lifecycle.state === lifecycle.UiState.BACKGROUND || lifecycle.state === lifecycle.UiState.IN_TRANSITION_TO_BACKGROUND;
   }
 
   get playbackRate() {
@@ -178,7 +174,6 @@ export class SenzaShakaPlayer extends shaka.Player {
    * Toggles between local and remote playback
    */
   async togglePlayback() {
-    await this._fetchUpdatedState();
     if (this.isInRemotePlayback) {
       await this.moveToLocalPlayback();
     } else {
@@ -201,8 +196,7 @@ export class SenzaShakaPlayer extends shaka.Player {
   /**
    * Seeks the player by x seconds
    */
-  async skip(seconds) {
-    await this._fetchUpdatedState();
+  skip(seconds) {
     this.currentTime = this.currentTime + seconds;
   }
 
@@ -303,18 +297,6 @@ export class SenzaShakaPlayer extends shaka.Player {
       console.log("remotePlayer", "license-request", "Writing response to remote player", res.code);
       event.writeLicenseResponse(res.code, res.responseBody);
     });
-  }
-
-  /**
-   * Lazy load the UI state to update isInRemotePlayback value
-   *
-   * @private
-   */
-  async _fetchUpdatedState() {
-    if (this.isInRemotePlayback === undefined) {
-      const state = await lifecycle.getState();
-      this.isInRemotePlayback = state === "background" || state === "inTransitionToBackground";
-    }
   }
 }
 

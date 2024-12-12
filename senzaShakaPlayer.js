@@ -26,17 +26,25 @@ export class SenzaShakaPlayer extends shaka.Player {
    */
   constructor(videoElement, videoContainer, dependencyInjector) {
     super(videoElement, videoContainer, dependencyInjector);
-    this.videoElement = videoElement;
     this.remotePlayer = remotePlayer;
+    this.handlePlayerEvents();
 
-    this.remotePlayer.attach(this.videoElement);
-
-    this.addEventListeners();
+    if (videoElement) {
+      this.videoElement = videoElement;
+      this.remotePlayer.attach(this.videoElement);
+      this.handleMediaEvents();
+    }
   }
 
-  addEventListeners() {
+  async attach(videoElement, initializeMediaSource) {
+    super.attach(videoElement, initializeMediaSource);
+    this.videoElement = videoElement;
+    this.remotePlayer.attach(this.videoElement);
+    this.handleMediaEvents();
+  }
+
+  handlePlayerEvents() {
     this.remotePlayer.addEventListener("ended", () => {
-      console.log("remotePlayer ended");
       lifecycle.moveToForeground();
       this.videoElement.dispatchEvent(new Event("ended"));
     });
@@ -56,7 +64,9 @@ export class SenzaShakaPlayer extends shaka.Player {
     this.addEventListener("error", (event) => {
       console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
     });
+  }
 
+  handleMediaEvents() {
     this.videoElement.addEventListener("play", () => {
       this.remotePlayer.play();
     });
@@ -76,26 +86,6 @@ export class SenzaShakaPlayer extends shaka.Player {
    */
   get isInRemotePlayback() {
     return lifecycle.state === lifecycle.UiState.BACKGROUND || lifecycle.state === lifecycle.UiState.IN_TRANSITION_TO_BACKGROUND;
-  }
-
-  /**
-   * Moves playback to local player.
-   *
-   * @returns {Promise<void>}
-   */
-  async moveToLocalPlayback() {
-    await lifecycle.moveToForeground();
-  }
-
-  /**
-   * Moves playback to remote player.
-   * The timecode needs to be synced here if audiosync is not enabled. 
-   *
-   * @returns {Promise<void>}
-   */
-  async moveToRemotePlayback() {
-    this.remotePlayer.currentTime = this.videoElement.currentTime;
-    await lifecycle.moveToBackground();
   }
 
   /**

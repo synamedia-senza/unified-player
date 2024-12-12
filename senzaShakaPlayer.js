@@ -79,26 +79,6 @@ export class SenzaShakaPlayer extends shaka.Player {
   }
 
   /**
-   * Moves playback to local player.
-   *
-   * @returns {Promise<void>}
-   */
-  async moveToLocalPlayback() {
-    await lifecycle.moveToForeground();
-  }
-
-  /**
-   * Moves playback to remote player.
-   * The timecode needs to be synced here if audiosync is not enabled. 
-   *
-   * @returns {Promise<void>}
-   */
-  async moveToRemotePlayback() {
-    this.remotePlayer.currentTime = this.videoElement.currentTime;
-    await lifecycle.moveToBackground();
-  }
-
-  /**
    * Loads a media URL into both local and remote players.
    *
    * @param {string} url - The URL of the media to load.

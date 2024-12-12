@@ -24,8 +24,8 @@ export class SenzaShakaPlayer extends shaka.Player {
    *
    * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
    */
-  constructor(videoElement) {
-    super(videoElement);
+  constructor(videoElement, videoContainer, dependencyInjector) {
+    super(videoElement, videoContainer, dependencyInjector);
     this.videoElement = videoElement;
     this.remotePlayer = remotePlayer;
 
@@ -66,13 +66,7 @@ export class SenzaShakaPlayer extends shaka.Player {
     });
 
     this.videoElement.addEventListener("seeked", () => {
-      console.log("Seeking remotePlayer.currentTime to", this.videoElement.currentTime);
       this.remotePlayer.currentTime = this.videoElement.currentTime;
-    });
- 
-    this.videoElement.addEventListener("ratechange", () => {
-      console.log("Setting remotePlayer.playbackRate to", this.videoElement.playbackRate);
-      this.remotePlayer.playbackRate = this.videoElement.playbackRate;
     });
   }
 

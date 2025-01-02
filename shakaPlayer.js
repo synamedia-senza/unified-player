@@ -1,26 +1,26 @@
 import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
 /**
- * SenzaShakaPlayer subclass of Shaka that handles both local and remote playback.
+ * ShakaPlayer subclass of Shaka that handles both local and remote playback.
  *
- * @class SenzaShakaPlayer
+ * @class ShakaPlayer
  *
  * @example
- * import { SenzaShakaPlayer } from "./senzaShakaPlayer.js";
+ * import { ShakaPlayer } from "./shakaPlayer.js";
  *
  * try {
  *   const videoElement = document.getElementById("video");
- *   const player = new SenzaShakaPlayer(videoElement);
+ *   const player = new ShakaPlayer(videoElement);
  *   await player.load("http://playable.url/file.mpd");
  *   await videoElement.play(); // will start the playback
  *
  * } catch (err) {
- *   console.error("SenzaShakaPlayer failed with error", err);
+ *   console.error("ShakaPlayer failed with error", err);
  * }
  */
-export class SenzaShakaPlayer extends shaka.Player {
+export class ShakaPlayer extends shaka.Player {
   /**
-   * Creates an instance of SenzaShakaPlayer, which is a subclass of shaka.Player.
+   * Creates an instance of ShakaPlayer, which is a subclass of shaka.Player.
    *
    * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
    */
@@ -117,7 +117,7 @@ export class SenzaShakaPlayer extends shaka.Player {
    * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string }) => void | null} responseFilter - Optional response filter function.
    *
    * @example
-   * senzaShakaPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
+   * shakaPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
    *  console.log("Requesting license from Widevine server");
    *  request.headers["Authorization"] = "Bearer <...>";
    * });

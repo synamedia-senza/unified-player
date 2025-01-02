@@ -1,5 +1,5 @@
 import { init, uiReady, lifecycle } from "senza-sdk";
-import { SenzaShakaPlayer } from "./senzaShakaPlayer.js";
+import { ShakaPlayer } from "./shakaPlayer.js";
 
 const TEST_VIDEO = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
 
@@ -8,7 +8,7 @@ let player;
 window.addEventListener("load", async () => {
   try {
     await init();
-    player = new SenzaShakaPlayer(video);
+    player = new ShakaPlayer(video);
     await player.load(TEST_VIDEO);
     await video.play();
     uiReady();
@@ -19,7 +19,7 @@ window.addEventListener("load", async () => {
 
 document.addEventListener("keydown", async function (event) {
   switch (event.key) {
-    case "Enter": await togglePlayback(); break;
+    case "Enter": await toggleBackground(); break;
     case "Escape": await playPause(); break;
     case "ArrowLeft": skip(-30); break;
     case "ArrowRight": skip(30); break;
@@ -28,11 +28,14 @@ document.addEventListener("keydown", async function (event) {
   event.preventDefault();
 });
 
-async function togglePlayback() {
+async function toggleBackground() {
   if (lifecycle.state == lifecycle.UiState.BACKGROUND) {
-    await player.moveToLocalPlayback();
+    await lifecycle.moveToForeground();
   } else {
-    await player.moveToRemotePlayback();
+    // remove this line once the remotePlayer has been updated to sync 
+    // automatically regardless of whether seamless switch is enabled
+    player.remotePlayer.currentTime = video.currentTime;
+    await lifecycle.moveToBackground();
   }
 }
 

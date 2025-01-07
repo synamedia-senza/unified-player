@@ -27,23 +27,24 @@ export class ShakaPlayer extends shaka.Player {
   constructor(videoElement, videoContainer, dependencyInjector) {
     super(videoElement, videoContainer, dependencyInjector);
     this.remotePlayer = remotePlayer;
-    this.handlePlayerEvents();
+    this.addPlayerEventListeners();
 
     if (videoElement) {
       this.videoElement = videoElement;
       this.remotePlayer.attach(this.videoElement);
-      this.handleMediaEvents();
+      this.addMediaEventListeners();
     }
   }
 
   async attach(videoElement, initializeMediaSource) {
     super.attach(videoElement, initializeMediaSource);
+    if (this.videoElement !== undefined) removeMediaEventListeners();
     this.videoElement = videoElement;
     this.remotePlayer.attach(this.videoElement);
-    this.handleMediaEvents();
+    this.addMediaEventListeners();
   }
 
-  handlePlayerEvents() {
+  addPlayerEventListeners() {
     this.remotePlayer.addEventListener("ended", () => {
       lifecycle.moveToForeground();
       this.videoElement.dispatchEvent(new Event("ended"));
@@ -66,18 +67,20 @@ export class ShakaPlayer extends shaka.Player {
     });
   }
 
-  handleMediaEvents() {
-    this.videoElement.addEventListener("play", () => {
-      this.remotePlayer.play();
-    });
- 
-    this.videoElement.addEventListener("pause", () => {
-      this.remotePlayer.pause();
-    });
-
-    this.videoElement.addEventListener("seeked", () => {
-      this.remotePlayer.currentTime = this.videoElement.currentTime;
-    });
+  addMediaEventListeners() {
+    this.videoElement.addEventListener("play", this.remotePlayer.play);
+    this.videoElement.addEventListener("pause", this.remotePlayer.pause);
+    this.videoElement.addEventListener("seeked", this.updateCurrentTime);
+  }
+  
+  removeMediaEventListeners() {
+    this.videoElement.removeEventListener("play", this.remotePlayer.play);
+    this.videoElement.removeEventListener("pause", this.remotePlayer.pause);
+    this.videoElement.removeEventListener("seeked", this.updateCurrentTime);
+  }
+  
+  updateCurrentTime() {
+    this.remotePlayer.currentTime = this.videoElement.currentTime;
   }
 
   /**

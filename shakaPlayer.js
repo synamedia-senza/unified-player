@@ -112,6 +112,31 @@ export class ShakaPlayer extends shaka.Player {
     }
   }
 
+  setTextTrackVisibility(isVisible) {
+    super.setTextTrackVisibility(isVisible);
+    remotePlayer.setTextTrackVisibility(isVisible);
+  }
+
+  selectAudioLanguage(language, role, channelsCount, safeMargin, codec, spatialAudio) {
+    console.log("set audio:", language);
+    super.selectAudioLanguage(language, role, channelsCount, safeMargin, codec, spatialAudio);
+    
+    let audioTracks = remotePlayer.getAudioTracks();
+    if (audioTracks.length) {
+      let track = audioTracks.find(t => t.lang == language);
+      if (track) {
+        console.log("set remote audio:", track.id);
+        remotePlayer.selectAudioTrack(track.id);
+      }
+    }
+  }
+
+  selectTextLanguage(language, role, forced) {
+    console.log("set text:", language);
+    super.selectTextLanguage(language, role, forced);
+    remotePlayer.selectTextTrack(language);
+  }
+
   /**
    * Configures DRM settings.
    *

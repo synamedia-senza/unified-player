@@ -1,42 +1,51 @@
 import { remotePlayer, lifecycle } from "senza-sdk";
 import shaka from "shaka-player";
 /**
- * SenzaShakaPlayer subclass of Shaka that handles both local and remote playback.
+ * ShakaPlayer subclass of Shaka that handles both local and remote playback.
  *
- * @class SenzaShakaPlayer
+ * @class ShakaPlayer
  *
  * @example
- * import { SenzaShakaPlayer } from "./senzaShakaPlayer.js";
+ * import { ShakaPlayer } from "./shakaPlayer.js";
  *
  * try {
  *   const videoElement = document.getElementById("video");
- *   const player = new SenzaShakaPlayer(videoElement);
+ *   const player = new ShakaPlayer(videoElement);
  *   await player.load("http://playable.url/file.mpd");
  *   await videoElement.play(); // will start the playback
  *
  * } catch (err) {
- *   console.error("SenzaShakaPlayer failed with error", err);
+ *   console.error("ShakaPlayer failed with error", err);
  * }
  */
-export class SenzaShakaPlayer extends shaka.Player {
+export class ShakaPlayer extends shaka.Player {
   /**
-   * Creates an instance of SenzaShakaPlayer, which is a subclass of shaka.Player.
+   * Creates an instance of ShakaPlayer, which is a subclass of shaka.Player.
    *
    * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
    */
   constructor(videoElement, videoContainer, dependencyInjector) {
     super(videoElement, videoContainer, dependencyInjector);
-    this.videoElement = videoElement;
     this.remotePlayer = remotePlayer;
+    this.addPlayerEventListeners();
 
-    this.remotePlayer.attach(this.videoElement);
-
-    this.addEventListeners();
+    if (videoElement) {
+      this.videoElement = videoElement;
+      this.remotePlayer.attach(this.videoElement);
+      this.addMediaEventListeners();
+    }
   }
 
-  addEventListeners() {
+  async attach(videoElement, initializeMediaSource) {
+    super.attach(videoElement, initializeMediaSource);
+    if (this.videoElement !== undefined) removeMediaEventListeners();
+    this.videoElement = videoElement;
+    this.remotePlayer.attach(this.videoElement);
+    this.addMediaEventListeners();
+  }
+
+  addPlayerEventListeners() {
     this.remotePlayer.addEventListener("ended", () => {
-      console.log("remotePlayer ended");
       lifecycle.moveToForeground();
       this.videoElement.dispatchEvent(new Event("ended"));
     });
@@ -56,18 +65,22 @@ export class SenzaShakaPlayer extends shaka.Player {
     this.addEventListener("error", (event) => {
       console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
     });
+  }
 
-    this.videoElement.addEventListener("play", () => {
-      this.remotePlayer.play();
-    });
- 
-    this.videoElement.addEventListener("pause", () => {
-      this.remotePlayer.pause();
-    });
-
-    this.videoElement.addEventListener("seeked", () => {
-      this.remotePlayer.currentTime = this.videoElement.currentTime;
-    });
+  addMediaEventListeners() {
+    this.videoElement.addEventListener("play", this.remotePlayer.play);
+    this.videoElement.addEventListener("pause", this.remotePlayer.pause);
+    this.videoElement.addEventListener("seeked", this.updateCurrentTime);
+  }
+  
+  removeMediaEventListeners() {
+    this.videoElement.removeEventListener("play", this.remotePlayer.play);
+    this.videoElement.removeEventListener("pause", this.remotePlayer.pause);
+    this.videoElement.removeEventListener("seeked", this.updateCurrentTime);
+  }
+  
+  updateCurrentTime() {
+    this.remotePlayer.currentTime = this.videoElement.currentTime;
   }
 
   /**
@@ -76,26 +89,6 @@ export class SenzaShakaPlayer extends shaka.Player {
    */
   get isInRemotePlayback() {
     return lifecycle.state === lifecycle.UiState.BACKGROUND || lifecycle.state === lifecycle.UiState.IN_TRANSITION_TO_BACKGROUND;
-  }
-
-  /**
-   * Moves playback to local player.
-   *
-   * @returns {Promise<void>}
-   */
-  async moveToLocalPlayback() {
-    await lifecycle.moveToForeground();
-  }
-
-  /**
-   * Moves playback to remote player.
-   * The timecode needs to be synced here if audiosync is not enabled. 
-   *
-   * @returns {Promise<void>}
-   */
-  async moveToRemotePlayback() {
-    this.remotePlayer.currentTime = this.videoElement.currentTime;
-    await lifecycle.moveToBackground();
   }
 
   /**
@@ -127,7 +120,7 @@ export class SenzaShakaPlayer extends shaka.Player {
    * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string }) => void | null} responseFilter - Optional response filter function.
    *
    * @example
-   * senzaShakaPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
+   * shakaPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
    *  console.log("Requesting license from Widevine server");
    *  request.headers["Authorization"] = "Bearer <...>";
    * });

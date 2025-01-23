@@ -1,6 +1,6 @@
 # Senza Shaka Player
 
-The `SenzaShakaPlayer` is a subclass of the Shaka player that seamlessly handles playback of both local and remote video. It abstracts the complexities of switching between local playback using Shaka Player and remote playback using the Senza cloud connector.
+The Senza `ShakaPlayer` is a subclass of the Shaka player that seamlessly handles playback of both local and remote video. It abstracts the complexities of switching between local playback using Shaka Player and remote playback using the Senza cloud connector.
 
 ## Properties
 

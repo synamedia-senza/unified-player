@@ -45,6 +45,12 @@ export class ShakaPlayer extends shaka.Player {
   }
 
   addPlayerEventListeners() {
+    this.remotePlayer.addEventListener("tracksupdate", () => {
+      console.log("Loaded tracks!")
+      console.log("remote audio", remotePlayer.getAudioTracks());
+      console.log("remote text", remotePlayer.getTextTracks());
+    });
+
     this.remotePlayer.addEventListener("ended", () => {
       lifecycle.moveToForeground();
       this.videoElement.dispatchEvent(new Event("ended"));
@@ -134,7 +140,15 @@ export class ShakaPlayer extends shaka.Player {
   selectTextLanguage(language, role, forced) {
     console.log("set text:", language);
     super.selectTextLanguage(language, role, forced);
-    remotePlayer.selectTextTrack(language);
+    
+    let textTracks = remotePlayer.getTextTracks();
+    if (textTracks.length) {
+      let track = textTracks.find(t => t.lang == language);
+      if (track) {
+        console.log("set remote text:", track.id);
+        remotePlayer.selectTextTrack(track.id);
+      }
+    }
   }
 
   /**

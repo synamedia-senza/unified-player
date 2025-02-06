@@ -27,8 +27,13 @@ window.addEventListener("load", async () => {
 
     player.setTextTrackVisibility(true);
 
-    console.log("remote audio", player.remotePlayer.getAudioTracks());
-    console.log("remote text", player.remotePlayer.getTextTracks());
+    player.remotePlayer.addEventListener("tracksupdate", () => {
+      console.log("Loaded tracks!")
+      console.log("remote audio", player.remotePlayer.getAudioTracks());
+      console.log("remote text", player.remotePlayer.getTextTracks());
+      player.selectAudioLanguage(audioLangs[selectedAudioIndex]);
+      player.selectTextLanguage(textLangs[selectedTextIndex]);
+    });
 
     uiReady();
   } catch (error) {
@@ -54,9 +59,8 @@ async function toggleBackground() {
   if (lifecycle.state == lifecycle.UiState.BACKGROUND) {
     await lifecycle.moveToForeground();
   } else {
-    // remove this line once the remotePlayer has been updated to sync 
-    // automatically regardless of whether seamless switch is enabled
-    player.remotePlayer.currentTime = video.currentTime;
+    console.log("Setting audio langauge before moving to background");
+    player.selectAudioLanguage(audioLangs[selectedAudioIndex]);
     await lifecycle.moveToBackground();
   }
 }

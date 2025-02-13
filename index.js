@@ -1,5 +1,5 @@
 import { init, uiReady, lifecycle } from "senza-sdk";
-import { ShakaPlayer } from "./shakaPlayer.js";
+import { SenzaShakaPlayer as ShakaPlayer } from "./shakaPlayer.js";
 
 const TEST_VIDEO = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
 
@@ -8,7 +8,8 @@ let player;
 window.addEventListener("load", async () => {
   try {
     await init();
-    player = new ShakaPlayer(video);
+    player = new ShakaPlayer();
+    await player.attach(video);
     await player.load(TEST_VIDEO);
     await video.play();
     uiReady();

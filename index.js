@@ -33,9 +33,6 @@ async function toggleBackground() {
   if (lifecycle.state == lifecycle.UiState.BACKGROUND) {
     await lifecycle.moveToForeground();
   } else {
-    // remove this line once the remotePlayer has been updated to sync 
-    // automatically regardless of whether seamless switch is enabled
-    player.remotePlayer.currentTime = video.currentTime;
     await lifecycle.moveToBackground();
   }
 }

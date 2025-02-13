@@ -14,7 +14,7 @@
     "webpack-dev-server": "^5.1.0"
   },
   "dependencies": {
-    "senza-sdk": "^4.1.0",
+    "senza-sdk": "^4.2.14",
     "shaka-player": "^4.12.5"
   }
 }

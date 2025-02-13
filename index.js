@@ -1,5 +1,5 @@
 import { init, uiReady, lifecycle } from "senza-sdk";
-import { ShakaPlayer } from "./shakaPlayer.js";
+import { SenzaShakaPlayer as ShakaPlayer } from "./shakaPlayer.js";
 
 const TEST_VIDEO = "https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd";
 
@@ -13,7 +13,8 @@ let selectedTextIndex = 0;
 window.addEventListener("load", async () => {
   try {
     await init();
-    player = new ShakaPlayer(video);
+    player = new ShakaPlayer();
+    await player.attach(video);
     await player.load(TEST_VIDEO);
     await video.play();
 

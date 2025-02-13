@@ -1,212 +1,243 @@
 import { remotePlayer, lifecycle } from "senza-sdk";
+import { sdkLogger } from "senza-sdk";
 import shaka from "shaka-player";
 /**
- * ShakaPlayer subclass of Shaka that handles both local and remote playback.
+ * SenzaShakaPlayer subclass of Shaka that handles both local and remote playback.
  *
- * @class ShakaPlayer
+ * @class SenzaShakaPlayer
  *
  * @example
- * import { ShakaPlayer } from "./shakaPlayer.js";
+ * import { SenzaShakaPlayer } from "./senzaShakaPlayer.js";
  *
  * try {
  *   const videoElement = document.getElementById("video");
- *   const player = new ShakaPlayer(videoElement);
+ *   const player = new SenzaShakaPlayer(videoElement);
  *   await player.load("http://playable.url/file.mpd");
  *   await videoElement.play(); // will start the playback
  *
  * } catch (err) {
- *   console.error("ShakaPlayer failed with error", err);
+ *   console.error("SenzaShakaPlayer failed with error", err);
  * }
  */
-export class ShakaPlayer extends shaka.Player {
-  /**
-   * Creates an instance of ShakaPlayer, which is a subclass of shaka.Player.
-   *
-   * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
-   */
-  constructor(videoElement, videoContainer, dependencyInjector) {
-    super(videoElement, videoContainer, dependencyInjector);
-    this.remotePlayer = remotePlayer;
-    this.addPlayerEventListeners();
+export class SenzaShakaPlayer extends shaka.Player {
 
-    if (videoElement) {
-      this.videoElement = videoElement;
-      this.remotePlayer.attach(this.videoElement);
-      this.addMediaEventListeners();
-    }
-  }
-
-  async attach(videoElement, initializeMediaSource) {
-    super.attach(videoElement, initializeMediaSource);
-    if (this.videoElement !== undefined) removeMediaEventListeners();
-    this.videoElement = videoElement;
-    this.remotePlayer.attach(this.videoElement);
-    this.addMediaEventListeners();
-  }
-
-  addPlayerEventListeners() {
-    this.remotePlayer.addEventListener("ended", () => {
-      lifecycle.moveToForeground();
-      this.videoElement.dispatchEvent(new Event("ended"));
-    });
-
-    this.remotePlayer.addEventListener("error", (event) => {
-      console.log("remotePlayer error:", event.detail.errorCode, event.detail.message);
-      this.videoElement.dispatchEvent(new CustomEvent("error", event));
-    });
-
-    this.remotePlayer.addEventListener("timeupdate", () => {
-      if (!this.isInRemotePlayback) {
-        return;
-      }
-      this.videoElement.currentTime = this.remotePlayer.currentTime;
-    });
-
-    this.addEventListener("error", (event) => {
-      console.log("localPlayer error:", event.detail.errorCode, event.detail.message);
-    });
-  }
-
-  addMediaEventListeners() {
-    this.videoElement.addEventListener("play", this.remotePlayer.play);
-    this.videoElement.addEventListener("pause", this.remotePlayer.pause);
-    this.videoElement.addEventListener("seeked", this.updateCurrentTime);
-  }
-  
-  removeMediaEventListeners() {
-    this.videoElement.removeEventListener("play", this.remotePlayer.play);
-    this.videoElement.removeEventListener("pause", this.remotePlayer.pause);
-    this.videoElement.removeEventListener("seeked", this.updateCurrentTime);
-  }
-  
-  updateCurrentTime() {
-    this.remotePlayer.currentTime = this.videoElement.currentTime;
-  }
-
-  /**
-   * Helper function that makes it easier to check if lifecycle.state is
-   * either background or inTransitionToBackground.
-   */
-  get isInRemotePlayback() {
-    return lifecycle.state === lifecycle.UiState.BACKGROUND || lifecycle.state === lifecycle.UiState.IN_TRANSITION_TO_BACKGROUND;
-  }
-
-  /**
-   * Loads a media URL into both local and remote players.
-   *
-   * @param {string} url - The URL of the media to load.
-   * @returns {Promise<void>}
-   */
-  async load(url, startTime, mimeType) {
-    if (!this.isInRemotePlayback || remotePlayer.getAssetUri() !== url) {
-      try {
-        await this.remotePlayer.load(url);
-      } catch (error) {
-        console.log("Couldn't load remote player. Error:", error);
-      }
-    }
-    try {
-      await super.load(url, startTime, mimeType);
-    } catch (error) {
-      console.log("Couldn't load local player. Error:", error);
-    }
-  }
-
-  /**
-   * Configures DRM settings.
-   *
-   * @param {string} server - The DRM server URL.
-   * @param {(request: { body : ArrayBuffer | ArrayBufferView | null , headers : { [ key: string ]: string } , uris : string [] }) => void | null} requestFilter - Optional request filter function, allows you to add auth tokens and/or reformat the body.
-   * @param {(response: { data : ArrayBuffer | ArrayBufferView , headers : { [ key: string ]: string } , originalUri : string , status ? : number , timeMs ? : number , uri : string }) => void | null} responseFilter - Optional response filter function.
-   *
-   * @example
-   * shakaPlayer.configureDrm("https://proxy.uat.widevine.com/proxy", (request) => {
-   *  console.log("Requesting license from Widevine server");
-   *  request.headers["Authorization"] = "Bearer <...>";
-   * });
-   */
-  configureDrm(server, requestFilter, responseFilter) {
-    this.configure({
-      drm: {
-        servers: {
-          'com.widevine.alpha': server,
+    /**
+     * @private
+     * @type {Object.<string, Function>}
+     * @description Object containing event listeners for the video element.
+     */
+    _videoEventListeners = {
+        "play": () => {
+            this.remotePlayer.play();
+        },
+        "pause": () => {
+            this.remotePlayer.pause();
+        },
+        "seeked": () => {
+            this.remotePlayer.currentTime = this.videoElement.currentTime;
         }
-      }
-    });
+    };
 
-    const networkingEngine = this.getNetworkingEngine();
+    /**
+     * @private
+     * @type {Object.<string, Function>}
+     * @description Object containing event listeners for the remote player.
+     */
+    _remotePlayerEventListeners = {
+        "ended": () => {
+            sdkLogger.log("remotePlayer ended");
+            lifecycle.moveToForeground();
+            if (this.videoElement) {
+                this.videoElement.dispatchEvent(new Event("ended"));
+            }
+        },
+        "error": (event) => {
+            sdkLogger.log("remotePlayer error:", event.detail.errorCode, event.detail.message);
+            if (this.videoElement) {
+                this.videoElement.dispatchEvent(new CustomEvent("error", event));
+            }
+        },
+        "license-request": async (event) => {
+            sdkLogger.log("remotePlayer", "license-request", "Got license-request event from remote player");
 
-    networkingEngine.registerRequestFilter((type, request) => {
-      if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
-        if (requestFilter) {
-          requestFilter(request);
+            // Extract license body from event
+            const requestBuffer = event?.detail?.licenseRequest;
+            const requestBufferStr = String.fromCharCode.apply(null, new Uint8Array(requestBuffer));
+            const decodedLicenseRequest = window.atob(requestBufferStr); // Decode from base64
+            const licenseRequestBytes = Uint8Array.from(decodedLicenseRequest, (l) => l.charCodeAt(0));
+
+            const request = {
+                body: licenseRequestBytes.buffer,
+                uris: [this.getConfiguration().drm.servers["com.widevine.alpha"]], // TODO: safe gaurd against undefined and other server types
+                method: "POST"
+            };
+
+            const response = await this.getNetworkingEngine().request(shaka.net.NetworkingEngine.RequestType.LICENSE, request).promise;
+
+            let responseBody = response.data;
+            if (response.status !== 200) {
+                responseBody = response.data ?? String.fromCharCode(new Uint8Array(response.data));
+                sdkLogger.error("remotePlayer", "license-request", "failed to to get response from widevine:", response.status, responseBody);
+            }
+            // Write response to remote player
+            sdkLogger.log("remotePlayer", "license-request", "Writing response to remote player", response.status);
+            event.writeLicenseResponse(response.status, responseBody);
+
         }
-      }
-    });
+    };
 
-    networkingEngine.registerResponseFilter((type, response) => {
-      if (type === shaka.net.NetworkingEngine.RequestType.LICENSE) {
-        if (responseFilter) {
-          responseFilter(response);
+    /**
+     * Creates an instance of SenzaShakaPlayer, which is a subclass of shaka.Player.
+     *
+     * @param {HTMLVideoElement} videoElement - The video element to be used for local playback. This parameter is optional. If not provided, the video element can be attached later using the attach method.
+     * @param {HTMLElement=} videoContainer - The videoContainer to construct UITextDisplayer
+     * @param {function(shaka.Player)=} dependencyInjector Optional callback
+   *   which is called to inject mocks into the Player.  Used for testing.
+     */
+    constructor(videoElement, videoContainer, dependencyInjector) {
+        super(videoElement, videoContainer, dependencyInjector);
+        this.remotePlayer = remotePlayer;
+        this.addRemotePlayerEventListeners();
+        // if video element is provided, add the listeres here. In this case ,there is no need to call attach.
+        if (videoElement) {
+            this.videoElement = videoElement;
+            this.addVideoElementEventListeners();
+            sdkLogger.warn("SenzaShakaPlayer constructor Adding videoElement in the constructor is going to be deprecated in the future. Please use attach method instead.");
         }
-      }
-    });
-
-    this.remotePlayer.addEventListener("license-request", async (event) => {
-      console.log("remotePlayer", "license-request", "Got license-request event from remote player");
-
-      // Extract license body from event
-      const requestBuffer = event?.detail?.licenseRequest;
-      const requestBufferStr = String.fromCharCode.apply(null, new Uint8Array(requestBuffer));
-      const decodedLicenseRequest = window.atob(requestBufferStr); // Decode from base64
-      const licenseRequestBytes = Uint8Array.from(decodedLicenseRequest, (l) => l.charCodeAt(0));
-
-      // Get license from server
-      const res = await getLicenseFromServer(server, licenseRequestBytes.buffer, requestFilter, responseFilter);
-
-      // Write response to remote player
-      console.log("remotePlayer", "license-request", "Writing response to remote player", res.code);
-      event.writeLicenseResponse(res.code, res.responseBody);
-    });
-  }
-}
-
-async function getLicenseFromServer(drmServer, licenseRequest, drmRequestFilter, drmResponseFilter) {
-  console.log("remotePlayer", "license-request", "Requesting license From Widevine server");
-  const request = {
-    "uris": [drmServer],
-    "method": "POST",
-    "body": licenseRequest,
-    "headers": {
-      "Content-Type": "application/octet-stream"
     }
-  };
 
-  if (drmRequestFilter) {
-    drmRequestFilter(request);
-  }
+    /**
+     * Overrides the attach method of shaka.Player to attach the video element.
+     *
+     * @param {HTMLVideoElement} videoElement - The video element to be used for local playback.
+     * @param {boolean} [initializeMediaSource=true] - Whether to initialize the media source.
+     */
+    async attach(videoElement, initializeMediaSource = true) {
+        await super.attach(videoElement, initializeMediaSource);
+        this.videoElement = videoElement;
+        this.remotePlayer.attach(this.videoElement);
+        this.addVideoElementEventListeners();
 
-  let response = await fetch(request.uris[0], request);
+    }
 
-  response = {
-    data: await response.arrayBuffer(),
-    headers: response.headers,
-    originalUri: response.url,
-    status: response.status,
-    timeMs: -1,
-    uri: response.url
-  };
+    /**
+   * Detach the player from the current media element. Leaves the player in a
+   * state where it cannot play media, until it has been attached to something
+   * else.
+   *
+   * @param {boolean=} keepAdManager
+   *
+   * @return {!Promise}
+   * @export
+   */
+    async detach(keepAdManager = false) {
+        await super.detach(keepAdManager);
+        this.removeVideoElementEventListeners();
+        if (remotePlayer.getAssetUri() !== "") {
+            await this.remotePlayer.unload();
+        }
+        this.remotePlayer.detach();
+        this.videoElement = null;
+    }
 
-  if (drmResponseFilter) {
-    drmResponseFilter(response);
-  }
+    addRemotePlayerEventListeners() {
+        for (const [event, listener] of Object.entries(this._remotePlayerEventListeners)) {
+            this.remotePlayer.addEventListener(event, listener);
+        }
+    }
 
-  const code = response.status;
-  if (code !== 200) {
-    const responseBody = response.data ? String.fromCharCode(new Uint8Array(response.data)) : undefined;
-    console.error("remotePlayer", "license-request", "failed to to get response from widevine:", code, responseBody);
-    return { code, responseBody };
-  }
+    addVideoElementEventListeners() {
+        for (const [event, listener] of Object.entries(this._videoEventListeners)) {
+            this.videoElement.addEventListener(event, listener);
+        }
 
-  return { code, responseBody: response.data };
+    }
+
+    removeVideoElementEventListeners() {
+        for (const [event, listener] of Object.entries(this._videoEventListeners)) {
+            this.videoElement.removeEventListener(event, listener);
+        }
+    }
+
+    removeRemotePlayerEventListeners() {
+        for (const [event, listener] of Object.entries(this._remotePlayerEventListeners)) {
+            this.remotePlayer.removeEventListener(event, listener);
+        }
+    }
+
+    /**
+     * Helper function that makes it easier to check if lifecycle.state is
+     * either background or inTransitionToBackground.
+     */
+    get isInRemotePlayback() {
+        return lifecycle.state === lifecycle.UiState.BACKGROUND || lifecycle.state === lifecycle.UiState.IN_TRANSITION_TO_BACKGROUND;
+    }
+
+    /**
+     * Loads a media URL into both local and remote players.
+     *
+     * @param {string} url - The URL of the media to load.
+     * @returns {Promise<void>}
+     */
+    async load(url, startTime, mimeType) {
+        if (!this.isInRemotePlayback || remotePlayer.getAssetUri() !== url) {
+            try {
+                await this.remotePlayer.load(url);
+            } catch (error) {
+                sdkLogger.log("Couldn't load remote player. Error:", error);
+            }
+        }
+        try {
+            await super.load(url, startTime, mimeType);
+        } catch (error) {
+            sdkLogger.log("Couldn't load local player. Error:", error);
+        }
+    }
+
+    setTextTrackVisibility(isVisible) {
+      super.setTextTrackVisibility(isVisible);
+      remotePlayer.setTextTrackVisibility(isVisible);
+    }
+
+    selectAudioLanguage(language, role, channelsCount, safeMargin, codec, spatialAudio) {
+      console.log("set audio:", language);
+      super.selectAudioLanguage(language, role, channelsCount, safeMargin, codec, spatialAudio);
+
+      let audioTracks = remotePlayer.getAudioTracks();
+      if (audioTracks.length) {
+        let track = audioTracks.find(t => t.lang == language);
+        if (track) {
+          console.log("set remote audio:", track.id);
+          remotePlayer.selectAudioTrack(track.id);
+        } else {
+          console.log(`no match for '${language}' in remote audio langs:`, audioTracks.map(t => t.lang));
+        }
+      } else {
+        console.log("no remote audio tracks found!");
+      }
+    }
+
+    selectTextLanguage(language, role, forced) {
+      console.log("set text:", language);
+      super.selectTextLanguage(language, role, forced);
+
+      let textTracks = remotePlayer.getTextTracks();
+      if (textTracks.length) {
+        let track = textTracks.find(t => t.lang == language);
+        if (track) {
+          console.log("set remote text:", track.id);
+          remotePlayer.selectTextTrack(track.id);
+        } else {
+          console.log(`no match for '${language}' in remote text langs:`, textTracks.map(t => t.lang));
+        }
+      } else {
+        console.log("no remote text tracks found!");
+      }
+    }
+
+    destroy() {
+        this.removeRemotePlayerEventListeners();
+        return super.destroy();
+    }
+
 }

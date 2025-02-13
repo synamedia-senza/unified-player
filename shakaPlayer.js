@@ -194,47 +194,6 @@ export class SenzaShakaPlayer extends shaka.Player {
         }
     }
 
-    setTextTrackVisibility(isVisible) {
-      super.setTextTrackVisibility(isVisible);
-      remotePlayer.setTextTrackVisibility(isVisible);
-    }
-
-    selectAudioLanguage(language, role, channelsCount, safeMargin, codec, spatialAudio) {
-      console.log("set audio:", language);
-      super.selectAudioLanguage(language, role, channelsCount, safeMargin, codec, spatialAudio);
-
-      let audioTracks = remotePlayer.getAudioTracks();
-      if (audioTracks.length) {
-        let track = audioTracks.find(t => t.lang == language);
-        if (track) {
-          console.log("set remote audio:", track.id);
-          remotePlayer.selectAudioTrack(track.id);
-        } else {
-          console.log(`no match for '${language}' in remote audio langs:`, audioTracks.map(t => t.lang));
-        }
-      } else {
-        console.log("no remote audio tracks found!");
-      }
-    }
-
-    selectTextLanguage(language, role, forced) {
-      console.log("set text:", language);
-      super.selectTextLanguage(language, role, forced);
-
-      let textTracks = remotePlayer.getTextTracks();
-      if (textTracks.length) {
-        let track = textTracks.find(t => t.lang == language);
-        if (track) {
-          console.log("set remote text:", track.id);
-          remotePlayer.selectTextTrack(track.id);
-        } else {
-          console.log(`no match for '${language}' in remote text langs:`, textTracks.map(t => t.lang));
-        }
-      } else {
-        console.log("no remote text tracks found!");
-      }
-    }
-
     destroy() {
         this.removeRemotePlayerEventListeners();
         return super.destroy();
